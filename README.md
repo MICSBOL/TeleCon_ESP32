@@ -35,6 +35,10 @@ Pin maps, BT/SSID identity, and `YOUR CODE HERE` stay in that sketch's `README.m
 
 Password for SoftAP builds: `telecon1234`. Control TCP (Role B and DevKit Wi‑Fi Binary): `192.168.4.1:3333`.
 
+## Sketch ZIPs
+
+`zips/` has one Arduino IDE archive per connection. Each archive contains the sketch folder (the `.ino` and its sources). The Android app downloads these files. After you change a sketch, replace the ZIP that has the same file name and push.
+
 ## Steer center trim
 
 On **RC Vehicle Pro**, Tune → tickers → Check. Firmware in each steering sketch stores the bias in NVS (`SteerCenter` in that sketch folder).
