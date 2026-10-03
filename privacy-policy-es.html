@@ -14,8 +14,8 @@
 </head>
 <body>
 <h1>Política de privacidad</h1>
-<p><strong>Última actualización:</strong> mayo de 2026</p>
-<p>Esta política describe cómo <strong>TeleCon4ESP32</strong> (“la app”, publicada por MICSBOL, paquete <code>com.micsbol.emitterapp</code>) trata la información cuando la usas para telemetría y control de hardware ESP32 por Bluetooth.</p>
+<p><strong>Última actualización:</strong> octubre de 2026</p>
+<p>Esta política describe cómo <strong>TeleCon4ESP32</strong> (“la app”, publicada por MICSBOL, paquete <code>com.micsbol.emitterapp</code>) trata la información cuando la usas para telemetría y control de hardware ESP32 por Bluetooth o por un enlace Wi-Fi local con ese hardware.</p>
 
 <h2>1. Responsable</h2>
 <p>La app es publicada por MICSBOL. Para consultas de privacidad, utiliza el correo indicado en la pantalla Acerca de la app.</p>
@@ -23,34 +23,45 @@
 <h2>2. Información que procesa la app</h2>
 <ul>
     <li><strong>Bluetooth:</strong> La app busca, empareja y se conecta a dispositivos Bluetooth que elijas (por ejemplo un ESP32). Envía comandos de control y recibe telemetría de tu hardware. Estos datos permanecen en el teléfono y solo se transmiten al dispositivo conectado. No operamos un servidor en la nube que reciba tu tráfico de control o telemetría.</li>
+    <li><strong>Wi-Fi local:</strong> Cuando eliges una conexión Wi-Fi, la app puede unirse al punto de acceso creado por tu ESP32 e intercambiar comandos de control y vídeo de la cámara con esa placa. Ese tráfico permanece en el enlace local entre el teléfono y la placa. No operamos un servidor en la nube que lo reciba.</li>
     <li><strong>Metadatos de dispositivo y conexión:</strong> Para reconectar rápido, la app puede guardar en el dispositivo el nombre y la dirección del último Bluetooth al que te conectaste, y el estado de conexión.</li>
-    <li><strong>Ajustes de la app:</strong> Comportamiento del joystick, valores por defecto de interruptores y perillas, y preferencias relacionadas se almacenan localmente (DataStore).</li>
-    <li><strong>Documentos:</strong> Guías PDF y archivos ZIP de firmware incluidos en la app se leen o copian localmente al abrirlos o exportarlos. No los subimos a nuestros servidores.</li>
+    <li><strong>Ajustes y monedas:</strong> El comportamiento del joystick, los valores por defecto de interruptores y perillas, las preferencias relacionadas, el saldo de monedas y el acceso temporal a funciones se almacenan localmente en tu dispositivo.</li>
+    <li><strong>Archivos que guardas:</strong> Si guardas una sesión, la app escribe un CSV con la telemetría de esa sesión en la carpeta Descargas. Si guardas una foto o un vídeo de la vista de la cámara ESP32, la app almacena esos fotogramas en Imágenes/TeleCon o Películas/TeleCon en tu teléfono. La app no usa la cámara ni el micrófono del teléfono. Esos archivos permanecen en el dispositivo salvo que tú los compartas.</li>
+    <li><strong>Descarga de sketches:</strong> Si descargas un ZIP de firmware, la app obtiene ese archivo del repositorio público de MICSBOL en GitHub y puede guardarlo en Descargas o entregarlo a otra app que elijas. Esa solicitud no incluye tus datos de control, telemetría ni vídeo de la cámara.</li>
+    <li><strong>Guías:</strong> Las guías PDF incluidas en la app y las páginas de documentación que abres se leen en tu dispositivo. No subimos esos archivos a nuestros servidores.</li>
+    <li><strong>Espera del regalo:</strong> Después de reclamar el regalo de explorador, la app guarda la hora de la reclamación en el dispositivo. En Android 10 y posteriores también escribe esa hora en un pequeño archivo de texto en Documentos/TeleCon4ESP32 para que la espera siga vigente tras reinstalar. El archivo solo contiene esa hora, no tu nombre ni una cuenta. Puedes borrarlo desde tus archivos.</li>
 </ul>
 
 <h2>3. Publicidad (Google AdMob)</h2>
-<p>La app muestra anuncios en banner mediante <strong>Google AdMob</strong>. Google puede recopilar identificadores y datos de uso para mostrar y medir anuncios, según la <a href="https://policies.google.com/privacy">Política de privacidad de Google</a> y <a href="https://policies.google.com/technologies/partner-sites">cómo Google usa la información de sitios o apps que usan sus servicios</a>. Puedes limitar la personalización de anuncios en los ajustes de Android (Google → Anuncios).</p>
+<p>La app muestra anuncios en banner y anuncios premiados opcionales que puedes elegir ver, mediante <strong>Google AdMob</strong>. Ver un anuncio premiado puede sumar monedas que permanecen en tu dispositivo. Google puede recopilar identificadores y datos de uso para mostrar y medir anuncios, según la <a href="https://policies.google.com/privacy">Política de privacidad de Google</a> y <a href="https://policies.google.com/technologies/partner-sites">cómo Google usa la información de sitios o apps que usan sus servicios</a>. Puedes limitar la personalización de anuncios en los ajustes de Android (Google → Anuncios).</p>
 
 <h2>4. Permisos</h2>
-<p>La app solicita permisos Bluetooth para descubrir y conectar tu controlador. No requiere ubicación para el escaneo Bluetooth (neverForLocation). La vibración puede usarse como retroalimentación cuando el dispositivo lo permita.</p>
+<ul>
+    <li><strong>Bluetooth,</strong> para descubrir y conectar tu controlador. En Android 12 y posteriores el escaneo no usa la ubicación. En Android 11 y anteriores, Android exige el permiso de ubicación para descubrir dispositivos Bluetooth. La app usa ese permiso solo para encontrar dispositivos cercanos y no registra dónde estás.</li>
+    <li><strong>Wi-Fi y estado de la red,</strong> para que la app pueda unirse al punto de acceso del ESP32 que elijas y mantener ese enlace local mientras el control o el vídeo están activos.</li>
+    <li><strong>Internet,</strong> para los anuncios, las páginas de documentación y privacidad, y las descargas de sketches que inicies.</li>
+    <li><strong>Vibración,</strong> como retroalimentación cuando el teléfono lo permita.</li>
+</ul>
+<p>Guardar fotos, vídeos y descargas usa las carpetas del sistema de medios y Descargas. En las versiones actuales de Android la app no pide acceso amplio a tu almacenamiento.</p>
 
 <h2>5. Lo que no hacemos</h2>
 <ul>
     <li>No exigimos cuenta ni recopilamos nombre, correo o teléfono dentro de la app.</li>
     <li>No vendemos tu información personal.</li>
-    <li>No subimos tus flujos de control o telemetría Bluetooth a servidores de MICSBOL.</li>
+    <li>No subimos tus comandos de control, telemetría, vídeo de la cámara ni archivos guardados a servidores de MICSBOL.</li>
+    <li>No usamos la cámara ni el micrófono del teléfono.</li>
 </ul>
 
 <h2>6. Menores</h2>
 <p>La app no está dirigida a menores de 13 años. No recopilamos a sabiendas información personal de menores.</p>
 
 <h2>7. Seguridad y conservación</h2>
-<p>Las preferencias locales permanecen en tu dispositivo hasta que borres los datos de la app o la desinstales. El emparejamiento Bluetooth también puede gestionarse en los ajustes Bluetooth del sistema.</p>
+<p>Las preferencias locales, el saldo de monedas y los datos de conexión permanecen en tu dispositivo hasta que borres los datos de la app o la desinstales. Las fotos, vídeos, archivos CSV y ZIP de sketches que guardaste permanecen en las carpetas del teléfono hasta que los borres. El archivo de espera del regalo en Documentos/TeleCon4ESP32 puede permanecer después de desinstalar la app hasta que lo borres. El emparejamiento Bluetooth también puede gestionarse en los ajustes Bluetooth del sistema. Si la copia de seguridad de Android está activada, el sistema puede incluir los datos locales de la app en la copia de seguridad personal del dispositivo.</p>
 
 <h2>8. Cambios</h2>
 <p>Podemos actualizar esta política. La fecha “Última actualización” cambiará cuando lo hagamos. El uso continuado de la app tras los cambios implica la aceptación de la política actualizada.</p>
 
 <h2>9. Tus derechos</h2>
-<p>Según tu región, puedes tener derecho de acceso, rectificación o supresión. Como la mayor parte de los datos son locales o los gestiona Google para anuncios, puedes borrar los datos de la app, ajustar los anuncios o contactarnos para otras solicitudes.</p>
+<p>Según tu región, puedes tener derecho de acceso, rectificación o supresión. Como la mayor parte de los datos son locales o los gestiona Google para anuncios, puedes borrar los datos de la app, eliminar los archivos que guardaste, ajustar los anuncios o contactarnos para otras solicitudes.</p>
 </body>
 </html>

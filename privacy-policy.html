@@ -14,8 +14,8 @@
 </head>
 <body>
 <h1>Privacy Policy</h1>
-<p><strong>Last updated:</strong> May 2026</p>
-<p>This policy describes how <strong>TeleCon4ESP32</strong> (“the app”, published by MICSBOL, package <code>com.micsbol.emitterapp</code>) handles information when you use it for telemetry and control of ESP32 hardware over Bluetooth.</p>
+<p><strong>Last updated:</strong> October 2026</p>
+<p>This policy describes how <strong>TeleCon4ESP32</strong> (“the app”, published by MICSBOL, package <code>com.micsbol.emitterapp</code>) handles information when you use it for telemetry and control of ESP32 hardware over Bluetooth or a local Wi-Fi link to that hardware.</p>
 
 <h2>1. Who we are</h2>
 <p>The app is published by MICSBOL. For privacy questions, contact us at the email shown on the About screen in the app.</p>
@@ -23,34 +23,45 @@
 <h2>2. Information the app processes</h2>
 <ul>
     <li><strong>Bluetooth:</strong> The app scans for, pairs with, and connects to Bluetooth devices you choose (for example an ESP32). It sends control commands and receives telemetry from your hardware. This data stays on your phone and is transmitted only to the device you connect to. We do not operate a cloud server that receives your control or telemetry traffic.</li>
+    <li><strong>Local Wi-Fi:</strong> When you choose a Wi-Fi connection, the app may join the access point created by your ESP32 and exchange control commands and camera video with that board. This traffic stays on the local link between your phone and the board. We do not operate a cloud server that receives it.</li>
     <li><strong>Device and connection metadata:</strong> To reconnect quickly, the app may store the name and address of the last Bluetooth device you connected to, and your connection status, on your device only.</li>
-    <li><strong>App settings:</strong> Joystick behavior, switch defaults, knob defaults, and related preferences are stored locally on your device (DataStore).</li>
-    <li><strong>Documents:</strong> PDF guides and ZIP firmware files bundled in the app are read or copied locally when you open or export them. We do not upload those files to our servers.</li>
+    <li><strong>App settings and coins:</strong> Joystick behavior, switch defaults, knob defaults, related preferences, your coin balance, and timed feature access are stored locally on your device.</li>
+    <li><strong>Files you save:</strong> If you save a session, the app writes a CSV of that session’s telemetry to your Downloads folder. If you save a still or a video from the ESP32 camera view, the app stores those frames in Pictures/TeleCon or Movies/TeleCon on your phone. The app does not use the phone’s camera or microphone. These files stay on your device unless you share them yourself.</li>
+    <li><strong>Sketch downloads:</strong> If you download a firmware ZIP, the app fetches that file from the public MICSBOL repository on GitHub and can save it to Downloads or hand it to another app you choose. That request does not include your control data, telemetry, or camera video.</li>
+    <li><strong>Guides:</strong> PDF guides bundled in the app, and the documentation pages you open, are read on your device. We do not upload those files to our servers.</li>
+    <li><strong>Free-gift cooldown:</strong> After you claim the explorer gift, the app stores the claim time on the device. On Android 10 and later it also writes that time into a small text file under Documents/TeleCon4ESP32 so the cooldown still applies after a reinstall. The file contains only that time, not your name or an account. You can delete it from your files.</li>
 </ul>
 
 <h2>3. Advertising (Google AdMob)</h2>
-<p>The app displays banner ads through <strong>Google AdMob</strong>. Google may collect identifiers and usage data to serve and measure ads, as described in the <a href="https://policies.google.com/privacy">Google Privacy Policy</a> and <a href="https://policies.google.com/technologies/partner-sites">How Google uses information from sites or apps that use our services</a>. You can limit ad personalization in your Android settings (Google → Ads).</p>
+<p>The app shows banner ads, and optional rewarded ads you can choose to watch, through <strong>Google AdMob</strong>. Watching a rewarded ad can add coins that stay on your device. Google may collect identifiers and usage data to serve and measure ads, as described in the <a href="https://policies.google.com/privacy">Google Privacy Policy</a> and <a href="https://policies.google.com/technologies/partner-sites">How Google uses information from sites or apps that use our services</a>. You can limit ad personalization in your Android settings (Google → Ads).</p>
 
 <h2>4. Permissions</h2>
-<p>The app requests Bluetooth permissions to discover and connect to your controller. It does not require location for Bluetooth scanning (neverForLocation). Vibration may be used for feedback where supported by the device.</p>
+<ul>
+    <li><strong>Bluetooth,</strong> to discover and connect to your controller. On Android 12 and later, scanning does not use location. On Android 11 and earlier, Android requires location permission for Bluetooth discovery. The app uses that permission only to find nearby devices and does not record where you are.</li>
+    <li><strong>Wi-Fi and network state,</strong> so the app can join the ESP32 access point you choose and keep that local connection while control or video is active.</li>
+    <li><strong>Internet,</strong> for ads, for the documentation and privacy pages, and for sketch downloads you start.</li>
+    <li><strong>Vibration,</strong> for feedback where the phone supports it.</li>
+</ul>
+<p>Saving pictures, videos, and downloads uses the system media and Downloads folders. On current Android versions the app does not ask for broad access to your storage.</p>
 
 <h2>5. What we do not do</h2>
 <ul>
     <li>We do not require an account or collect your name, email, or phone number inside the app.</li>
     <li>We do not sell your personal information.</li>
-    <li>We do not upload your Bluetooth control or telemetry streams to MICSBOL servers.</li>
+    <li>We do not upload your control commands, telemetry, camera video, or saved files to MICSBOL servers.</li>
+    <li>We do not use the phone’s camera or microphone.</li>
 </ul>
 
 <h2>6. Children</h2>
 <p>The app is not directed at children under 13. We do not knowingly collect personal information from children.</p>
 
 <h2>7. Security and retention</h2>
-<p>Locally stored preferences remain on your device until you clear app data or uninstall the app. Bluetooth pairing may also be managed in your system Bluetooth settings.</p>
+<p>Local preferences, coin balance, and connection details remain on your device until you clear app data or uninstall the app. Pictures, videos, CSV files, and sketch ZIPs that you saved remain in your phone’s folders until you delete them. The gift-cooldown file under Documents/TeleCon4ESP32 can remain after you uninstall the app until you delete it. Bluetooth pairing may also be managed in your system Bluetooth settings. If Android backup is turned on, the system may include the app’s local data in your personal device backup.</p>
 
 <h2>8. Changes</h2>
 <p>We may update this policy. The “Last updated” date at the top will change when we do. Continued use of the app after changes means you accept the updated policy.</p>
 
 <h2>9. Your rights</h2>
-<p>Depending on your region, you may have rights to access, correct, or delete personal data. Because most data is local or handled by Google for ads, you can clear app storage, adjust ad settings, or contact us for other requests.</p>
+<p>Depending on your region, you may have rights to access, correct, or delete personal data. Because most data is local or handled by Google for ads, you can clear app storage, delete files you saved, adjust ad settings, or contact us for other requests.</p>
 </body>
 </html>
