@@ -1,0 +1,223 @@
+% Sketches de firmware TeleCon — qué .ino grabar.
+% Build: pdflatex -output-directory=../build telecon_firmware_sketches.tex
+% PDF entregado (asset de Android): ../build/firmware_sketches_esp.pdf
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[margin=2.4cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[spanish]{babel}
+\usepackage{lmodern}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{colortbl}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{needspace}
+\usepackage{etoolbox}
+
+\preto\section{\Needspace{8\baselineskip}}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=black,
+  urlcolor=blue,
+  pdftitle={Sketches de firmware TeleCon},
+  pdfauthor={TeleCon}
+}
+
+\definecolor{TblHead}{HTML}{0F6F73}
+\definecolor{TblChan}{HTML}{D5F5E3}
+\definecolor{TblSw}{HTML}{FCF3CF}
+\definecolor{TblTelem}{HTML}{D4E6F1}
+\definecolor{TblKnob}{HTML}{F5CBA7}
+
+\newcommand{\thc}[1]{\textcolor{white}{\bfseries #1}}
+\newcommand{\chip}[2]{\colorbox{#1}{\strut\,\scriptsize #2\,}}
+\newcommand{\ui}[1]{\textsf{\textbf{#1}}}
+
+\title{Sketches de firmware TeleCon\\[0.3em]
+\large Qué \texttt{.ino} grabar}
+\author{ESP32 DevKit por Bluetooth, y ESP32-CAM para video}
+\date{Versión 1.0 \quad 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+La aplicación Android descarga un ZIP por cada conexión desde el
+repositorio de firmware. Cada ZIP es un sketch de Arduino, y el sketch es
+el \texttt{.ino} del mismo nombre. Esta nota nombra cada sketch de control
+por Bluetooth y cada sketch de ESP32-CAM, y las dos formas de añadir una
+cámara.
+\end{abstract}
+
+{\sffamily\scriptsize
+\chip{TblChan}{DevKit + Bluetooth}
+\chip{TblTelem}{CAM solo video + DevKit}
+\chip{TblKnob}{Una CAM: video y control}}
+
+\tableofcontents
+\vspace{1em}
+
+\section{Dos formas de añadir una cámara}
+
+Las palancas, los botones y la telemetría siempre necesitan un sketch de
+control. El video es opcional y usa una ESP32-CAM. Elija uno de estos
+montajes.
+
+\begin{center}
+\renewcommand{\arraystretch}{1.28}
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{>{\raggedright\arraybackslash}p{3.6cm}
+                >{\raggedright\arraybackslash}p{5.4cm}
+                >{\raggedright\arraybackslash}p{5.2cm}}
+\rowcolor{TblHead}
+\thc{Montaje} & \thc{Placas} & \thc{Sketches} \\
+\rowcolor{TblChan}
+Solo Bluetooth & Una ESP32 DevKit & Uno de los tres \texttt{.ino} de Bluetooth \\
+\rowcolor{TblTelem}
+Solo cámara, más Bluetooth & ESP32-CAM para video, DevKit para las palancas & \texttt{TeleCon\_CAM\_SoftAP\_Video.ino} en la CAM, y un sketch Bluetooth en la DevKit \\
+\rowcolor{TblKnob}
+Control y cámara juntos & Una ESP32-CAM & \texttt{TeleCon\_CAM\_WiFi\_Simple.ino} o \texttt{TeleCon\_CAM\_WiFi\_Binary.ino} \\
+\end{tabular}
+\end{center}
+
+El teléfono se une al SoftAP de la cámara para la imagen. No envía las
+palancas por ese enlace de video. Las palancas van al sketch de control:
+Bluetooth en la DevKit, o TCP en la CAM única que también sirve el video.
+
+\section{Control Bluetooth en una ESP32 DevKit}
+
+Placa en la aplicación: \ui{DevKit}. Esta placa no lleva cámara. Abra la
+carpeta del sketch en el IDE de Arduino (la carpeta que contiene el
+\texttt{.ino}) y súbalo a un módulo ESP32 Dev.
+
+\begin{center}
+\renewcommand{\arraystretch}{1.28}
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{>{\raggedright\arraybackslash}p{4.3cm}
+                >{\raggedright\arraybackslash}p{4.6cm}
+                >{\raggedright\arraybackslash}p{5.3cm}}
+\rowcolor{TblHead}
+\thc{ZIP / \texttt{.ino}} & \thc{Ajuste en el teléfono} & \thc{En el aire} \\
+\rowcolor{TblChan}
+\texttt{TeleCon\_Classic\_Simple} & Classic + Simple & Nombre \texttt{ESP32-TC-RC-BT-Simple}, PIN \texttt{1234}. Saludo \texttt{proto,simple}. Líneas de texto \texttt{RC:CTRL}, \texttt{RC:BTN}, \texttt{RC:DATA}, \texttt{RC:PLOT}. \\
+\rowcolor{TblChan}
+\texttt{TeleCon\_Classic\_Binary} & Classic + Binary & Nombre \texttt{ESP32-TC-RC-BT-Binary}. Saludo \texttt{proto,binary}. Tramas \texttt{AA 55}, \texttt{BB 66}, \texttt{CC 11/22/33}. \\
+\rowcolor{TblChan}
+\texttt{TeleCon\_BLE\_Binary} & BLE Binary & Nombre \texttt{ESP32-TC-RC-BLE-Binary} (Nordic UART). Las mismas tramas binarias que Classic Binary. \\
+\end{tabular}
+\end{center}
+
+\paragraph{\texttt{TeleCon\_Classic\_Simple.ino}}
+Un solo archivo para la primera placa. Ponga el código de motores y servos
+en \texttt{onControl()} y \texttt{onButton()}, donde el archivo dice
+\texttt{YOUR CODE HERE}. El sketch ya incluye un servo de dirección en el
+GPIO 13: la palanca \texttt{rx} $= 0$ es un pulso de $1500$\,\textmu s.
+Los ocho bytes de telemetría (CH1--CH8 en el teléfono) se eligen en
+\texttt{kTelemetryChannels[]} dentro de este mismo archivo. Con
+\texttt{ENABLE\_PLOT} en 1 la placa envía \texttt{RC:PLOT} cada 50\,ms
+aproximadamente.
+
+\paragraph{\texttt{TeleCon\_Classic\_Binary.ino}}
+El \texttt{.ino} solo arranca el Bluetooth y los módulos del vehículo.
+Los pines, el PWM y los ocho canales de telemetría están en los otros
+archivos de esa carpeta. Edite \texttt{pins.h} para su controlador y
+\texttt{TelemetryChannels.h} para lo que informan CH1--CH8. El ajuste del
+teléfono debe ser Classic + Binary antes de conectar. El formato del cable
+es el documento del protocolo de control, no las líneas de texto del
+sketch Simple.
+
+\paragraph{\texttt{TeleCon\_BLE\_Binary.ino}}
+Los mismos módulos de vehículo y la misma tabla
+\texttt{TelemetryChannels.h} que Classic Binary. El enlace es BLE en lugar
+de Classic SPP. Elija BLE Binary en la aplicación. No lo empareje como un
+dispositivo Classic.
+
+Estos tres sketches son también la mitad de control del montaje de dos
+placas que sigue. Grabe solo uno de ellos en la DevKit.
+
+\section{ESP32-CAM, solo video}
+
+Úselo cuando una DevKit ya ejecuta uno de los sketches Bluetooth y quiere
+imagen desde una segunda placa.
+
+\paragraph{\texttt{TeleCon\_CAM\_SoftAP\_Video.ino}}
+ZIP \texttt{TeleCon\_CAM\_SoftAP\_Video.zip}. Grábelo en una ESP32-CAM
+(AI-Thinker). Este sketch sirve video y no acepta palancas.
+
+\begin{itemize}[leftmargin=1.4cm]
+  \item SoftAP \texttt{TeleCon-RC-CAM-Starter}, contraseña
+        \texttt{telecon1234}, dirección \texttt{192.168.4.1}.
+  \item Imagen: \texttt{http://192.168.4.1/stream} (MJPEG) o
+        \texttt{/capture} (un JPEG).
+  \item Calidad del flujo: \texttt{http://192.168.4.1/camconfig}.
+  \item No hay puerto de control. Esta placa no recibe \texttt{RC:CONNECT}.
+\end{itemize}
+
+En el teléfono, active la cámara superpuesta y deje la conexión Bluetooth
+apuntada a la DevKit (Classic Simple, Classic Binary o BLE Binary). El
+teléfono usa Wi-Fi para la CAM y Bluetooth para las palancas al mismo
+tiempo. No grabe \texttt{TeleCon\_CAM\_WiFi\_Simple} en este montaje: ese
+sketch es el caso de una sola placa.
+
+\section{ESP32-CAM, control y cámara en una placa}
+
+Una ESP32-CAM hace los dos trabajos. No hay una segunda DevKit ni
+Bluetooth en esta placa. El control es TCP en el mismo SoftAP que el
+video. Estos sketches son para \ui{RC Vehicle Pro} con placa \ui{CAM}.
+
+\begin{center}
+\renewcommand{\arraystretch}{1.28}
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{>{\raggedright\arraybackslash}p{4.4cm}
+                >{\raggedright\arraybackslash}p{4.4cm}
+                >{\raggedright\arraybackslash}p{5.4cm}}
+\rowcolor{TblHead}
+\thc{ZIP / \texttt{.ino}} & \thc{Ajuste en el teléfono} & \thc{En el aire} \\
+\rowcolor{TblKnob}
+\texttt{TeleCon\_CAM\_WiFi\_Simple} & Placa CAM, Wi-Fi CAM Starter & SoftAP \texttt{TeleCon-RC-CAM-Starter} / \texttt{telecon1234}. Video en \texttt{192.168.4.1}. Palancas en TCP \texttt{192.168.4.1:3333}, saludo \texttt{proto,simple}. \\
+\rowcolor{TblKnob}
+\texttt{TeleCon\_CAM\_WiFi\_Binary} & Placa CAM, Wi-Fi SoftAP Binary & SoftAP \texttt{TeleCon-RC-CAM} / \texttt{telecon1234}. El mismo host de video. Palancas en el puerto TCP 3333, saludo \texttt{proto,binary}. \\
+\end{tabular}
+\end{center}
+
+\paragraph{\texttt{TeleCon\_CAM\_WiFi\_Simple.ino}}
+Control por texto, la misma idea que Classic Simple, más el flujo de la
+cámara. Los pines de la cámara quedan libres: ponga los motores en
+\texttt{onControl()} y \texttt{onButton()} en pines que la cámara no use.
+El archivo indica el sketch CAM binario cuando el archivo único se queda
+corto.
+
+\paragraph{\texttt{TeleCon\_CAM\_WiFi\_Binary.ino}}
+Tramas binarias (\texttt{AA 55}, \texttt{BB 66}, \texttt{CC 11/22/33}) y
+video en una CAM. \texttt{CameraStream} es dueño del SoftAP. El
+\texttt{.ino} arranca el control Wi-Fi, los módulos del vehículo y la
+cámara. Con \texttt{TELECON\_VEHICLE\_IO} en 0, los pines de la cámara
+siguen libres y las salidas de motor quedan apagadas hasta que active la
+E/S y mueva esos pines.
+
+\section{ESP32 DevKit por Wi-Fi, sin cámara}
+
+\paragraph{\texttt{TeleCon\_WiFi\_Binary.ino}}
+ZIP \texttt{TeleCon\_WiFi\_Binary.zip}. No es un sketch Bluetooth y no
+lleva cámara. La placa es su propio SoftAP
+\texttt{ESP32-TC-RC-WiFi-Binary}, contraseña \texttt{telecon1234}. Las
+palancas usan tramas binarias en TCP \texttt{192.168.4.1:3333}, saludo
+\texttt{proto,binary}. En la aplicación elija placa DevKit y Wi-Fi SoftAP
+Binary. El gráfico de este sketch sigue enviando cuatro muestras; la tabla
+de ocho canales está solo en los sketches Bluetooth.
+
+\section{Qué contiene el ZIP}
+
+La aplicación descarga \texttt{zips/TeleCon\_<nombre>.zip}. Descomprímalo
+y abra la carpeta que contiene el \texttt{.ino} del mismo nombre. Arduino
+compila cada \texttt{.cpp} y \texttt{.h} de esa carpeta, así que un sketch
+binario es el \texttt{.ino} más esos módulos. No vuelva a copiar
+\texttt{SteerCenter}: los sketches de serie no guardan un centro de
+dirección. El recorte queda en el teléfono, y \texttt{rx} $= 0$ es
+$1500$\,\textmu s.
+
+\end{document}

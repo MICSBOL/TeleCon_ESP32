@@ -1,15 +1,17 @@
 # TeleCon4ESP32 user documentation
 
-Two documents only (EN + ES each):
+Three documents (EN + ES each):
 
 | Document | Role | Source | Delivered PDF |
 |----------|------|--------|---------------|
 | **User guide** | Full product doc | `*/src/telecon_user_guide.tex` | `*/build/telecon_user_guide.pdf` |
 | **Fast guide** | First Classic Simple session (Android Codes asset) | `*/src/telecon_fast_guide.tex` | `en/build/fast_guide_eng.pdf`, `es/build/fast_guide_esp.pdf` |
+| **Firmware sketches** | Which `.ino` to flash (Bluetooth DevKit, CAM video-only, one-board CAM) | `*/src/telecon_firmware_sketches.tex` | `en/build/firmware_sketches_eng.pdf`, `es/build/firmware_sketches_esp.pdf` |
 
-`fast_guide_eng.pdf` / `fast_guide_esp.pdf` are the **only** fast-guide PDFs in `build/`.
-They are aliases for the app asset names (`CodeAssetModels.kt`); there is no separate
-third guide. LaTeX still compiles from `telecon_fast_guide.tex`.
+`fast_guide_eng.pdf` / `fast_guide_esp.pdf` and
+`firmware_sketches_eng.pdf` / `firmware_sketches_esp.pdf` are the names the
+Android app loads from assets. LaTeX still compiles from
+`telecon_fast_guide.tex` and `telecon_firmware_sketches.tex`.
 
 Firmware authors: see [Protocol_Documentation](../Protocol_Documentation/README.md).
 Arduino pin maps and `YOUR CODE HERE` stay in the sketch `README.md` next to
@@ -40,12 +42,18 @@ Or manually:
 cd en/src
 pdflatex -output-directory=../build telecon_user_guide.tex
 pdflatex -output-directory=../build telecon_fast_guide.tex
+pdflatex -output-directory=../build telecon_firmware_sketches.tex
+pdflatex -output-directory=../build telecon_firmware_sketches.tex
 cp ../build/telecon_fast_guide.pdf ../build/fast_guide_eng.pdf
-rm -f ../build/telecon_fast_guide.pdf
+cp ../build/telecon_firmware_sketches.pdf ../build/firmware_sketches_eng.pdf
+rm -f ../build/telecon_fast_guide.pdf ../build/telecon_firmware_sketches.pdf
 
 cd ../../es/src
 pdflatex -output-directory=../build telecon_user_guide.tex
 pdflatex -output-directory=../build telecon_fast_guide.tex
+pdflatex -output-directory=../build telecon_firmware_sketches.tex
+pdflatex -output-directory=../build telecon_firmware_sketches.tex
 cp ../build/telecon_fast_guide.pdf ../build/fast_guide_esp.pdf
-rm -f ../build/telecon_fast_guide.pdf
+cp ../build/telecon_firmware_sketches.pdf ../build/firmware_sketches_esp.pdf
+rm -f ../build/telecon_fast_guide.pdf ../build/telecon_firmware_sketches.pdf
 ```
