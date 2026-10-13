@@ -49,23 +49,21 @@
 La aplicación Android descarga un ZIP por cada conexión desde el
 repositorio de firmware. Cada ZIP es un sketch de Arduino, y el sketch es
 el \texttt{.ino} del mismo nombre. Esta nota nombra cada sketch de control
-por Bluetooth y cada sketch de ESP32-CAM, y las dos formas de añadir una
-cámara.
+por Bluetooth y el sketch de la ESP32-CAM. La cámara solo se conecta con
+una DevKit por Bluetooth y una ESP32-CAM aparte para el video.
 \end{abstract}
 
 {\sffamily\scriptsize
 \chip{TblChan}{DevKit + Bluetooth}
-\chip{TblTelem}{CAM solo video + DevKit}
-\chip{TblKnob}{Una CAM: video y control}}
+\chip{TblTelem}{CAM solo video + DevKit}}
 
 \tableofcontents
 \vspace{1em}
 
-\section{Dos formas de añadir una cámara}
+\section{La única forma de conectar la cámara}
 
-Las palancas, los botones y la telemetría siempre necesitan un sketch de
-control. El video es opcional y usa una ESP32-CAM. Elija uno de estos
-montajes.
+Hoy la imagen no sale de la misma placa que las palancas. Hacen falta
+dos placas, y no hay otro montaje de cámara en la aplicación.
 
 \begin{center}
 \renewcommand{\arraystretch}{1.28}
@@ -74,19 +72,23 @@ montajes.
                 >{\raggedright\arraybackslash}p{5.4cm}
                 >{\raggedright\arraybackslash}p{5.2cm}}
 \rowcolor{TblHead}
-\thc{Montaje} & \thc{Placas} & \thc{Sketches} \\
+\thc{Papel} & \thc{Placa} & \thc{Sketch} \\
 \rowcolor{TblChan}
-Solo Bluetooth & Una ESP32 DevKit & Uno de los tres \texttt{.ino} de Bluetooth \\
+Palancas & ESP32 DevKit & Uno de los tres \texttt{.ino} de Bluetooth \\
 \rowcolor{TblTelem}
-Solo cámara, más Bluetooth & ESP32-CAM para video, DevKit para las palancas & \texttt{TeleCon\_CAM\_SoftAP\_Video.ino} en la CAM, y un sketch Bluetooth en la DevKit \\
-\rowcolor{TblKnob}
-Control y cámara juntos & Una ESP32-CAM & \texttt{TeleCon\_CAM\_WiFi\_Simple.ino} o \texttt{TeleCon\_CAM\_WiFi\_Binary.ino} \\
+Imagen & ESP32-CAM & \texttt{TeleCon\_CAM\_\-SoftAP\_Video.ino} \\
 \end{tabular}
 \end{center}
 
-El teléfono se une al SoftAP de la cámara para la imagen. No envía las
-palancas por ese enlace de video. Las palancas van al sketch de control:
-Bluetooth en la DevKit, o TCP en la CAM única que también sirve el video.
+Grabe el sketch de video en la CAM y un sketch Bluetooth en la DevKit.
+En el teléfono, deje el modo Bluetooth apuntado a la DevKit y active la
+cámara superpuesta. El teléfono se une al Wi-Fi
+\texttt{TeleCon-RC-CAM-Starter}, contraseña \texttt{telecon1234}, solo
+para la imagen. Las palancas siguen por Bluetooth. Una sola ESP32-CAM
+no las lleva, y el control no viaja por el Wi-Fi de la cámara.
+
+Sin cámara basta la DevKit con uno de los tres sketches Bluetooth. Esa
+placa no lleva video.
 
 \section{Control Bluetooth en una ESP32 DevKit}
 
@@ -120,6 +122,8 @@ Los ocho bytes de telemetría (CH1--CH8 en el teléfono) se eligen en
 \texttt{kTelemetryChannels[]} dentro de este mismo archivo. Con
 \texttt{ENABLE\_PLOT} en 1 la placa envía \texttt{RC:PLOT} cada 50\,ms
 aproximadamente.
+La guía de código de este sketch es
+\texttt{telecon\_classic\_simple\_code.tex} en esta documentación.
 
 \paragraph{\texttt{TeleCon\_Classic\_Binary.ino}}
 El \texttt{.ino} solo arranca el Bluetooth y los módulos del vehículo.
@@ -160,55 +164,7 @@ ZIP \texttt{TeleCon\_CAM\_SoftAP\_Video.zip}. Grábelo en una ESP32-CAM
 En el teléfono, active la cámara superpuesta y deje la conexión Bluetooth
 apuntada a la DevKit (Classic Simple, Classic Binary o BLE Binary). El
 teléfono usa Wi-Fi para la CAM y Bluetooth para las palancas al mismo
-tiempo. No grabe \texttt{TeleCon\_CAM\_WiFi\_Simple} en este montaje: ese
-sketch es el caso de una sola placa.
-
-\section{ESP32-CAM, control y cámara en una placa}
-
-Una ESP32-CAM hace los dos trabajos. No hay una segunda DevKit ni
-Bluetooth en esta placa. El control es TCP en el mismo SoftAP que el
-video. Estos sketches son para \ui{RC Vehicle Pro} con placa \ui{CAM}.
-
-\begin{center}
-\renewcommand{\arraystretch}{1.28}
-\setlength{\tabcolsep}{4pt}
-\begin{tabular}{>{\raggedright\arraybackslash}p{4.4cm}
-                >{\raggedright\arraybackslash}p{4.4cm}
-                >{\raggedright\arraybackslash}p{5.4cm}}
-\rowcolor{TblHead}
-\thc{ZIP / \texttt{.ino}} & \thc{Ajuste en el teléfono} & \thc{En el aire} \\
-\rowcolor{TblKnob}
-\texttt{TeleCon\_CAM\_WiFi\_Simple} & Placa CAM, Wi-Fi CAM Starter & SoftAP \texttt{TeleCon-RC-CAM-Starter} / \texttt{telecon1234}. Video en \texttt{192.168.4.1}. Palancas en TCP \texttt{192.168.4.1:3333}, saludo \texttt{proto,simple}. \\
-\rowcolor{TblKnob}
-\texttt{TeleCon\_CAM\_WiFi\_Binary} & Placa CAM, Wi-Fi SoftAP Binary & SoftAP \texttt{TeleCon-RC-CAM} / \texttt{telecon1234}. El mismo host de video. Palancas en el puerto TCP 3333, saludo \texttt{proto,binary}. \\
-\end{tabular}
-\end{center}
-
-\paragraph{\texttt{TeleCon\_CAM\_WiFi\_Simple.ino}}
-Control por texto, la misma idea que Classic Simple, más el flujo de la
-cámara. Los pines de la cámara quedan libres: ponga los motores en
-\texttt{onControl()} y \texttt{onButton()} en pines que la cámara no use.
-El archivo indica el sketch CAM binario cuando el archivo único se queda
-corto.
-
-\paragraph{\texttt{TeleCon\_CAM\_WiFi\_Binary.ino}}
-Tramas binarias (\texttt{AA 55}, \texttt{BB 66}, \texttt{CC 11/22/33}) y
-video en una CAM. \texttt{CameraStream} es dueño del SoftAP. El
-\texttt{.ino} arranca el control Wi-Fi, los módulos del vehículo y la
-cámara. Con \texttt{TELECON\_VEHICLE\_IO} en 0, los pines de la cámara
-siguen libres y las salidas de motor quedan apagadas hasta que active la
-E/S y mueva esos pines.
-
-\section{ESP32 DevKit por Wi-Fi, sin cámara}
-
-\paragraph{\texttt{TeleCon\_WiFi\_Binary.ino}}
-ZIP \texttt{TeleCon\_WiFi\_Binary.zip}. No es un sketch Bluetooth y no
-lleva cámara. La placa es su propio SoftAP
-\texttt{ESP32-TC-RC-WiFi-Binary}, contraseña \texttt{telecon1234}. Las
-palancas usan tramas binarias en TCP \texttt{192.168.4.1:3333}, saludo
-\texttt{proto,binary}. En la aplicación elija placa DevKit y Wi-Fi SoftAP
-Binary. El gráfico de este sketch sigue enviando cuatro muestras; la tabla
-de ocho canales está solo en los sketches Bluetooth.
+tiempo. El control de las palancas no va en la ESP32-CAM.
 
 \section{Qué contiene el ZIP}
 

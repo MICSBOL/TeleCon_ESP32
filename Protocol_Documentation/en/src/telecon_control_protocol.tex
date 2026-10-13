@@ -281,14 +281,6 @@ Classic Simple & SPP & \texttt{simple} & Section~\ref{sec:simple} \\
 Classic Binary & SPP & \texttt{binary} & Section~\ref{sec:binary} \\
 \rowcolor{TblTelem}
 BLE Binary & NUS & \texttt{binary} & Section~\ref{sec:binary} \\
-\rowcolor{TblTelem}
-Wi-Fi SoftAP Binary & TCP :3333 & \texttt{binary} & Section~\ref{sec:binary} \\
-\rowcolor{TblChan}
-CAM starter (Role~B) & TCP :3333 & \texttt{simple} & Section~\ref{sec:simple} \\
-\rowcolor{TblTelem}
-CAM SoftAP Binary & TCP :3333 & \texttt{binary} & Section~\ref{sec:binary} \\
-\rowcolor{TblId}
-Legacy CAM SoftAP & TCP :3333 & \texttt{wifi} & Simple text \\
 \end{tabular}
 
 \vspace{0.4em}
@@ -472,8 +464,8 @@ Additional ACK keys are ignored for session establishment.
 
 \texttt{reason} must be \texttt{proto\_mismatch} or \texttt{app\_mismatch}
 for the structured Android dialogs.
-\texttt{RC:ACK,steer\_center,1} is a later settings acknowledgement and
-must not be used as CONNECT success.
+Only \texttt{RC:ACK,app,RC} establishes the session. A later ACK is not
+CONNECT success. Stock sketches do not send a steer-center ACK.
 
 \subsection{Recommended device state}
 
@@ -564,7 +556,7 @@ void handleLine(String line) {
   else if (line.startsWith("RC:BTN")) {
     (void)valueOf(line, "id").toInt();
   } else if (line.startsWith("RC:SET")) {
-    // persist steer_center / rx if implementing trim
+    // Stock sketches ignore RC:SET. Trim stays on the phone.
   }
 }
 
@@ -602,9 +594,12 @@ void sendTelemetry(int leftPanel, int batt, int analog) {
            ",batt," + String(batt) + ",analog," + String(analog));
 }
 
-void sendPlot(uint8_t v0, uint8_t v1, uint8_t v2, uint8_t v3) {
+void sendPlot(uint8_t v0, uint8_t v1, uint8_t v2, uint8_t v3,
+              uint8_t v4, uint8_t v5, uint8_t v6, uint8_t v7) {
   sendLine("RC:PLOT,v0," + String(v0) + ",v1," + String(v1) +
-           ",v2," + String(v2) + ",v3," + String(v3));
+           ",v2," + String(v2) + ",v3," + String(v3) +
+           ",v4," + String(v4) + ",v5," + String(v5) +
+           ",v6," + String(v6) + ",v7," + String(v7));
 }
 \end{lstlisting}
 
@@ -725,16 +720,20 @@ Emitted on UI change (not a fixed phone-side poll).
 \chip{TblSw}{Switches}
 \end{center}
 
-Dual-rate, expo, reverse, and deadzone are applied on the phone before TX.
-Firmware must not apply the same curves again.
+Dual-rate, expo, reverse, deadzone, and steering trim are applied on the
+phone before TX. Firmware must not apply the same curves again.
+Stock sketches do not store a servo center: stick \texttt{rx} $= 0$ is a
+$1500$\,\textmu s pulse. Phone trim (\texttt{rightTrimX}) is already inside
+the \texttt{rx} value. A later vehicle sketch may store one center by itself
+if a second transmitter must share that straight-ahead.
 
 \paragraph{\texttt{RC:BTN}}
-\texttt{RC:BTN,id,1} --- ids 1--4 center cluster; $16$ ($0x10$) steer-center
-save on RC Vehicle Pro.
+\texttt{RC:BTN,id,1} --- ids 1--4, the center cluster. The phone does not
+send id $16$.
 
 \paragraph{\texttt{RC:SET}}
-\texttt{RC:SET,steer\_center,1,rx,-3} --- persist mechanical zero.
-\texttt{rx} includes phone trim ($-100\ldots 100$).
+Stock sketches ignore \texttt{RC:SET}. Do not persist a steer center from
+this line.
 
 \subsection{Device $\rightarrow$ phone}
 
@@ -796,8 +795,10 @@ Do not emit \texttt{RC:RADAR} or channel-map packets.
 
 Each line is one time sample on a numbered bus \texttt{v0}\ldots\texttt{v7}
 (= CH1\ldots CH8). Map sensors to $0\ldots 255$ ($0$ = bottom of the graph,
-$255$ = top). A four-sample line is valid; omitted \texttt{v4}\ldots\texttt{v7}
-stay at $0$ on the phone. The app keeps the last $100$ points per channel.
+$255$ = top). Stock Bluetooth sketches send all eight keys about every
+$50$\,ms. A four-sample line is still valid; omitted \texttt{v4}\ldots\texttt{v7}
+stay at $0$ on the phone. The app keeps eight channels and the last $100$
+points on each; a ninth sample is dropped.
 
 \wireframe{%
 \wapp{RC}\wcol\wtyp{PLOT}\wsep
@@ -834,26 +835,76 @@ stay at $0$ on the phone. The app keeps the last $100$ points per channel.
 \rowcolor{TblKnob}
 \texttt{v3} & CH4 & $0\ldots 255$ & Default fourth trace \\
 \rowcolor{TblTelem}
-\texttt{v4}\ldots\texttt{v7} & CH5\ldots CH8 & $0\ldots 255$ & Extra sources; bind in the channel map \\
+\texttt{v4}\ldots\texttt{v7} & CH5\ldots CH8 & $0\ldots 255$ & Same bus; bind in the channel map \\
 \end{tabular}
 
 \vspace{0.35em}
 \chip{TblChan}{CH1--CH2}
 \chip{TblKnob}{CH3--CH4}
-\chip{TblTelem}{CH5--CH8 optional}
+\chip{TblTelem}{CH5--CH8}
 \end{center}
 
 Control Panel shows four plot widgets (defaults CH1--CH4). Trace colours are
 fixed by channel index. Plot labels and the channel map live in Android RC
-settings --- do not send \texttt{RC:PLOTCFG}.
+settings --- do not send \texttt{RC:PLOTCFG}. The same eight bytes also feed
+radar, gauges, and HUD badges when the user selects that channel.
+
+\paragraph{Stock Bluetooth channel table.}
+Classic Simple, Classic Binary, and BLE Binary fill the eight bytes from
+\texttt{kTelemetryChannels[]} (row 0 = CH1). Classic Simple keeps the table
+in the \texttt{.ino}; the binary sketches keep it in \texttt{TelemetryChannels.h}.
+A row is \texttt{\{ kind, vehicle, pin, ledcChannel, dutyMin, dutyMax \}}.
+Only the fields for \texttt{kind} are read.
+
+\begin{center}
+\renewcommand{\arraystretch}{1.25}
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{>{\raggedright\arraybackslash}p{2.6cm}
+                >{\raggedright\arraybackslash}p{6.2cm}
+                >{\raggedright\arraybackslash}p{4.6cm}}
+\rowcolor{TblHead}
+\thc{kind} & \thc{Byte} & \thc{Fields used} \\
+\rowcolor{TblChan}
+\texttt{TEL\_VEHICLE} & Built-in signal named by \texttt{vehicle} & \texttt{vehicle} \\
+\rowcolor{TblTelem}
+\texttt{TEL\_ADC} & \texttt{analogRead}, $0\ldots 4095 \mapsto 0\ldots 255$ & \texttt{pin} \\
+\rowcolor{TblSw}
+\texttt{TEL\_GPIO} & \texttt{digitalRead} $\mapsto 0$ or $255$ & \texttt{pin} \\
+\rowcolor{TblKnob}
+\texttt{TEL\_PWM} & LEDC duty, \texttt{dutyMin}$\mapsto 0$, \texttt{dutyMax}$\mapsto 255$ & \texttt{pin}, channel, duty window \\
+\end{tabular}
+\end{center}
+
+On a pin row the \texttt{vehicle} name is ignored. On a \texttt{TEL\_VEHICLE}
+row the pin and duty window are ignored. Built-in names are temperature,
+throttle ($\lvert ly\rvert$), battery, steer ($\lvert rx\rvert$), lights,
+both knobs, and $\lvert ry\rvert$. Those magnitudes do not show direction.
+\texttt{TEL\_GPIO} on an output pin reports the level last written.
+\texttt{TEL\_PWM} reads a pin that is already attached. An 8-bit motor uses
+duty $0\ldots 255$. A 12-bit servo across $1000$--$2000$\,\textmu s uses duty
+$204\ldots 409$ (center $\approx 128$). Core 3.x reads the GPIO; core 2.x
+reads \texttt{ledcChannel}.
+
+Classic Simple defaults: demo temperature, throttle magnitude, demo battery,
+steering-stick magnitude, lights switch, both knobs, then the steering-servo
+PWM. Classic Binary and BLE Binary defaults, with vehicle IO on: temperature,
+throttle magnitude, battery scaled to $0\ldots 255$, steering-stick magnitude,
+left-drive PWM (GPIO 25), right-drive PWM (GPIO 27), lights GPIO 15, pan-servo
+PWM (GPIO 12, same $204\ldots 409$ window).
+
+Both axes of both sticks fit in four of the eight rows. Map a signed axis
+with center $128$: \texttt{map(axis, -100, 100, 0, 255)}. The plot period
+stays $50$\,ms; filling more of the eight bytes does not add a packet.
+One Simple line is about $80$ bytes. Binary \texttt{CC 33} with eight
+samples is $14$ bytes.
 
 Typical \texttt{loop()}: PLOT every $30$--$100$\,ms from ADC or filtered
 sensors; DATA every $500$\,ms for panels and battery. Gate both on
 \texttt{session\_ok}.
 
 Drop this into the sketch from Section~\ref{sec:code-esp32}.
-\texttt{sendLine}, \texttt{sessionOk}, \texttt{ly}, \texttt{rx} and
-\texttt{sw} are already there.
+\texttt{sendLine}, \texttt{sessionOk}, \texttt{ly}, \texttt{rx}, \texttt{lk},
+\texttt{rk}, and \texttt{sw} are already there.
 
 \begin{lstlisting}
 int toPlotByte(int value, int minVal, int maxVal) {
@@ -869,9 +920,13 @@ void sendData(int left, int right, int analog, int batt, uint8_t led) {
   sendLine(line);
 }
 
-void sendPlot(uint8_t v0, uint8_t v1, uint8_t v2, uint8_t v3) {
-  sendLine("RC:PLOT,v0," + String(v0) + ",v1," + String(v1) +
-           ",v2," + String(v2) + ",v3," + String(v3));
+void sendPlot(uint8_t v0, uint8_t v1, uint8_t v2, uint8_t v3,
+              uint8_t v4, uint8_t v5, uint8_t v6, uint8_t v7) {
+  char line[128];
+  snprintf(line, sizeof(line),
+           "RC:PLOT,v0,%u,v1,%u,v2,%u,v3,%u,v4,%u,v5,%u,v6,%u,v7,%u",
+           v0, v1, v2, v3, v4, v5, v6, v7);
+  sendLine(line);
 }
 
 unsigned long lastDataMs = 0;
@@ -892,7 +947,11 @@ void loop() {
     sendPlot(toPlotByte(analogRead(34), 0, 4095),
              toPlotByte(abs(ly), 0, 100),
              toPlotByte(76, 0, 100),
-             toPlotByte(abs(rx), 0, 100));
+             toPlotByte(abs(rx), 0, 100),
+             (sw & 0x01) ? 255 : 0,
+             toPlotByte(lk, 0, 1023),
+             toPlotByte(rk, 0, 1023),
+             128);
   }
 }
 \end{lstlisting}
@@ -988,7 +1047,7 @@ Ids match Simple \texttt{RC:BTN}.
 \rowcolor{TblSync}
 0--1 & 2 & \texttt{0xBB 0x66} frame sync & Sync \\
 \rowcolor{TblId}
-2 & 1 & Button id (1--4; $16$\,=\,steer-center save) & Button \\
+2 & 1 & Button id (1--4, center cluster) & Button \\
 \rowcolor{TblId}
 3 & 1 & Same id repeated & Button \\
 \end{tabular}
@@ -1050,8 +1109,11 @@ Ids match Simple \texttt{RC:BTN}.
 
 \paragraph{\texttt{CC 33} (variable)}
 
-\texttt{count} should be 4 or 8.
-Do not send \texttt{CC 44}.
+Stock Bluetooth sketches send \texttt{count = 8} (14-byte frame).
+\texttt{count = 4} remains valid; the phone then leaves CH5--CH8 at $0$.
+Do not send \texttt{CC 44}. The eight samples are the same CH1--CH8 bus as
+Simple \texttt{RC:PLOT}, filled from \texttt{kTelemetryChannels[]} in
+\texttt{TelemetryChannels.h}.
 
 \begin{center}
 \renewcommand{\arraystretch}{1.25}

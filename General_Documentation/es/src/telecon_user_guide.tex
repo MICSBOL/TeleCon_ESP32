@@ -254,9 +254,8 @@ placa para la imagen; Bluetooth o TCP llevan los sticks.
         Un ESP32-CAM es opcional y solo hace falta para vídeo.
 \end{itemize}
 
-Quédate en \ui{Predeterminado} y \ui{Classic + Simple} hasta que ese camino
-funcione. \ui{Avanzado} (Binary, BLE, Wi-Fi de DevKit, CAM Binary) es para
-después.
+Empieza por \ui{Classic + Simple} hasta que ese camino funcione.
+Classic Binario y BLE Binario están en la misma lista de conexión.
 
 \section{Seguridad}
 \label{sec:safety}
@@ -312,15 +311,14 @@ usuario. Interfaz en español.}
 \subsection*{3 --- Obtener el sketch, ajustar y conectar}
 
 Abre \ui{Panel de control} $\rightarrow$ ajustes (engranaje).
-\ui{Tipo de usuario} = \ui{Predeterminado}.
 \ui{Conexión} = Bluetooth, \ui{Classic + Simple (líneas de texto)}.
 En \ui{Firmware correspondiente}, toca el enlace de código de
 \texttt{TeleCon\_Classic\_Simple}, comparte o guarda el ZIP, cópialo al
 ordenador y abre la carpeta del \texttt{.ino} en Arduino IDE.
 
-\shot{S03}{s03_settings_default.png}{Vertical, tema claro, Tipo de usuario visible}
-{Ajustes de Panel de control. Tipo de usuario Predeterminado, Conexión
-Bluetooth + Classic + Simple (líneas de texto), y Firmware correspondiente
+\shot{S03}{s03_settings_default.png}{Vertical, tema claro, Conexión visible}
+{Ajustes de Panel de control. Conexión Bluetooth +
+Classic + Simple (líneas de texto), y Firmware correspondiente
 con el enlace de TeleCon Classic Simple. Interfaz en español.}
 
 Carga \textbf{TeleCon Classic Simple}.
@@ -428,8 +426,7 @@ Los ajustes del módulo dicen a la app qué enlace abrir.
 
 \subsection{Bluetooth}
 
-Lo usan los sketches de DevKit: Classic Simple (Predeterminado),
-Classic Binary, BLE Binary (Avanzado).
+Lo usan los sketches de DevKit: Classic Simple, Classic Binary y BLE Binary.
 
 \begin{enumerate}[leftmargin=1.5cm]
   \item Concede Dispositivos cercanos (o Ubicación en Android antiguo).
@@ -444,13 +441,13 @@ vuelve a escanear.
 
 \subsection{Wi-Fi de la placa (SoftAP)}
 
-Lo usan el vídeo CAM y algunos builds Avanzado de DevKit por Wi-Fi.
-El teléfono deja el Wi-Fi de casa. Sin internet en esa red es normal.
+Lo usa la ESP32-CAM de solo video. El teléfono deja el Wi-Fi de casa para
+la imagen. Sin internet en esa red es normal. Las palancas siguen en
+Bluetooth.
 
-Red CAM Predeterminada: SSID \texttt{TeleCon-RC-CAM-Starter},
+Red de la cámara: SSID \texttt{TeleCon-RC-CAM-Starter},
 contraseña \texttt{telecon1234}.
-Luego toca Conectar en el módulo para que el control use TCP
-\texttt{192.168.4.1:3333} (Rol~B) o se quede en Bluetooth (Rol~A).
+Esta placa no recibe el control de las palancas.
 
 \shot{S09}{s09_wifi_join.png}{Vertical, ajustes Wi-Fi de Android}
 {Selector Wi-Fi del sistema con TeleCon-RC-CAM-Starter (o TeleCon-RC-CAM)
@@ -511,7 +508,7 @@ Cabina Pro.
 Se desbloquea con suscripción, monedas o el regalo explorador (anuncio
 corto).
 
-Dos montajes de hardware:
+Un montaje de hardware para el video:
 
 \begin{center}
 \renewcommand{\arraystretch}{1.25}
@@ -519,21 +516,16 @@ Dos montajes de hardware:
                 >{\raggedright\arraybackslash}p{4.4cm}
                 >{\raggedright\arraybackslash}p{5.4cm}}
 \rowcolor{TblHead}
-\thc{Rol} & \thc{Placas} & \thc{Qué hace el teléfono} \\
-\rowcolor{TblChan}
-B Predet. & Un ESP32-CAM &
-  Únete al Wi-Fi CAM. Vídeo HTTP. Control por TCP :3333. \\
+\thc{Montaje} & \thc{Placas} & \thc{Qué hace el teléfono} \\
 \rowcolor{TblKnob}
-A overlay & CAM + DevKit &
+Cámara superpuesta & CAM + DevKit &
   Wi-Fi CAM solo para vídeo. Sticks por Bluetooth del DevKit. \\
 \end{tabular}
 \end{center}
 
 \vspace{0.35em}
 {\sffamily\scriptsize
-\chip{TblChan}{Una CAM --- Predeterminado}
-\chip{TblKnob}{Vídeo CAM + Bluetooth DevKit}
-\chip{TblId}{No una CAM para SoftAP y Bluetooth a la vez}}
+\chip{TblKnob}{Vídeo CAM + Bluetooth DevKit}}
 
 El trim de dirección está en Tune del HUD (tickers $\rightarrow$ Check).
 La placa guarda el sesgo.
@@ -541,40 +533,36 @@ La placa guarda el sesgo.
 \shot{S12}{s12_rc_vehicle.jpg}{HUD horizontal}
 {Pantalla en vivo de Vehículo RC: dual sticks, telemetría HUD y panel de
 cámara (MJPEG en vivo o la tarjeta de ayuda si el stream está inactivo).
-Interfaz en español. Preferible Rol B Predeterminado con vídeo en línea.}
+Interfaz en español. El video, si se usa, sale de una ESP32-CAM aparte.}
 
 \shot{S13}{s13_vehicle_settings.png}{Vertical, sección Conexión / CAM}
-{Ajustes de Vehículo RC: Función CAM Un ESP32-CAM (simple), Tipo de usuario
-Predeterminado, Rol B SoftAP + Simple, SSID TeleCon-RC-CAM-Starter.
+{Ajustes de Vehículo RC: cámara SoftAP opcional en una segunda ESP32-CAM,
+SSID TeleCon-RC-CAM-Starter. Las palancas siguen en Bluetooth de la DevKit.
 Interfaz en español.}
 
-\section{Predeterminado frente a Avanzado}
+\section{Modos de conexión}
 \label{sec:modes}
 
-\ui{Tipo de usuario} en los ajustes del módulo oculta a propósito las
-opciones difíciles.
+Classic Simple, Classic Binario y BLE Binario aparecen todos en los
+ajustes del módulo. Elige la fila que coincida con el sketch.
 
 \begin{center}
 \renewcommand{\arraystretch}{1.22}
 \begin{tabular}{>{\raggedright\arraybackslash}p{3.2cm}
                 >{\raggedright\arraybackslash}p{9.0cm}}
 \rowcolor{TblHead}
-\thc{Tipo} & \thc{Enlace típico} \\
+\thc{Modo} & \thc{Enlace} \\
 \rowcolor{TblChan}
-Predeterminado &
-  DevKit Classic Simple, o una CAM SoftAP Simple, o Rol~A
-  (CAM solo-vídeo + DevKit Classic Simple). Gratis. \\
+Classic Simple &
+  Líneas de texto en la DevKit, o el mismo modo más una ESP32-CAM solo de video. \\
 \rowcolor{TblSync}
-Avanzado &
-  Classic Binary, BLE Binary, DevKit Wi-Fi Binary, CAM SoftAP Binary.
-  Monedas o Pro. \\
+Classic Binario y BLE Binario &
+  Tramas binarias en la DevKit. La misma ESP32-CAM opcional, solo de video. \\
 \end{tabular}
 \end{center}
 
 El firmware de la placa debe coincidir con la fila elegida.
 Tras un cambio, desconecta y vuelve a conectar.
-\ui{Restaurar valores originales} deja ese módulo en el enlace
-Predeterminado de arranque.
 
 \section{Códigos y Acerca de}
 \label{sec:docs}
@@ -592,7 +580,7 @@ Predeterminado de arranque.
 \label{sec:coins}
 
 \ui{Panel de control} sigue gratis en Simple Predeterminado.
-\ui{Vehículo RC}, las opciones Avanzado y las vistas extra del centro
+\ui{Vehículo RC} y las vistas extra del centro
 (Cámara, Radar, gráfica de stick, CSV de sesión) necesitan monedas o
 suscripción Pro.
 
@@ -644,8 +632,8 @@ El brillo vuelve al cabo de unos días.
 anuncios. Detalle y precio están en la hoja de suscripción de Play.
 
 \shot{S14}{s14_coin_unlock.png}{Vertical, diálogo de desbloqueo}
-{Diálogo de desbloqueo con monedas para un módulo concreto (por ejemplo
-Vehículo RC o ajustes Avanzado): plazos y confirmación. Interfaz en español.}
+{Diálogo de desbloqueo con monedas de un módulo (por ejemplo Vehículo RC):
+plazos y confirmación. Interfaz en español.}
 
 \section{Cuando falla}
 \label{sec:fix}

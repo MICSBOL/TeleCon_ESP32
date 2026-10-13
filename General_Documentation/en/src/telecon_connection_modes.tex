@@ -1,0 +1,157 @@
+% TeleCon connection modes — what the phone setting means.
+% Build: pdflatex -output-directory=../build telecon_connection_modes.tex
+% Delivered PDF: ../build/connection_modes_eng.pdf
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[margin=2.4cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{colortbl}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{needspace}
+\usepackage{etoolbox}
+
+\preto\section{\Needspace{8\baselineskip}}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=black,
+  urlcolor=blue,
+  pdftitle={TeleCon connection modes},
+  pdfauthor={TeleCon}
+}
+
+\makeatletter
+\g@addto@macro\UrlBreaks{\do\_\do\-\do\/\do\:}
+\makeatother
+\newcommand{\code}[1]{\nolinkurl{#1}}
+
+\definecolor{TblHead}{HTML}{0F6F73}
+\definecolor{TblChan}{HTML}{D5F5E3}
+\definecolor{TblTelem}{HTML}{D4E6F1}
+\definecolor{TblKnob}{HTML}{F5CBA7}
+
+\newcommand{\thc}[1]{\textcolor{white}{\bfseries #1}}
+\newcommand{\chip}[2]{\colorbox{#1}{\strut\,\scriptsize #2\,}}
+\newcommand{\ui}[1]{\textsf{\textbf{#1}}}
+
+\title{TeleCon connection modes\\[0.3em]
+\large What to select before you connect}
+\author{Phone setting, board, and sketch must match}
+\date{Version 1.0 \quad 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+A connection mode is the link the phone opens to the ESP32. Pick it in the
+application settings before you tap Connect. The sketch flashed on the board
+must use the same handshake. This note lists every mode the app still offers,
+and the camera overlay, which is not a separate mode.
+\end{abstract}
+
+{\sffamily\scriptsize
+\chip{TblKnob}{Camera overlay}}
+
+\tableofcontents
+\vspace{1em}
+
+\section{Set the mode before you connect}
+
+The phone does not change the sketch when you change the mode. It only
+changes how it speaks. Choose the mode, then connect. Classic Simple,
+Classic Binary, and BLE Binary are all available.
+
+\begin{itemize}[leftmargin=1.4cm]
+  \item The mode stays in effect for that application until you change it.
+        You do not reconnect just to remap a telemetry channel. You do
+        reconnect, and you reflash, when the handshake itself changes.
+\end{itemize}
+
+\section{Modes at a glance}
+
+\begin{center}
+\small
+\renewcommand{\arraystretch}{1.25}
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{>{\raggedright\arraybackslash}p{4.2cm}
+                >{\raggedright\arraybackslash}p{2.4cm}
+                >{\raggedright\arraybackslash}p{7.2cm}}
+\rowcolor{TblHead}
+\thc{Mode in the app} & \thc{Board} & \thc{Sketch} \\
+\rowcolor{TblChan}
+Classic + Simple & DevKit & \code{TeleCon_Classic_Simple} \\
+\rowcolor{TblChan}
+Classic + Binary & DevKit & \code{TeleCon_Classic_Binary} \\
+\rowcolor{TblChan}
+BLE + Binary & DevKit & \code{TeleCon_BLE_Binary} \\
+\end{tabular}
+\end{center}
+
+The optional row \ui{Use SoftAP camera} sits on top of the three Bluetooth
+modes. It does not replace them. See the last section.
+
+\section{Classic + Simple}
+
+Bluetooth Classic, text lines. This is the first mode to use.
+
+\begin{itemize}[leftmargin=1.4cm]
+  \item App: board \ui{DevKit}, mode \ui{Classic + Simple (text lines)}.
+  \item Board name \code{ESP32-TC-RC-BT-Simple}, PIN \code{1234}.
+  \item Handshake \code{RC:CONNECT,proto,simple}.
+  \item Sticks, buttons, and telemetry are lines such as \code{RC:CTRL},
+        \code{RC:BTN}, \code{RC:DATA}, and \code{RC:PLOT}.
+  \item Eight telemetry bytes (CH1--CH8) when the sketch sends a plot.
+\end{itemize}
+
+\section{Classic + Binary}
+
+Same Classic radio as Simple, with short binary frames instead of text.
+Higher rate, same pins, less to read in the Serial Monitor.
+
+\begin{itemize}[leftmargin=1.4cm]
+  \item App: board \ui{DevKit}, mode \ui{Classic + Binary}.
+  \item Board name \code{ESP32-TC-RC-BT-Binary}.
+  \item Handshake \code{RC:CONNECT,proto,binary}.
+  \item Frames start with \code{AA 55} (sticks), \code{BB 66} (buttons),
+        and \code{CC 11/22/33} (telemetry).
+  \item Do not pair this board as BLE, and do not leave the phone on
+        Simple.
+\end{itemize}
+
+\section{BLE + Binary}
+
+Bluetooth Low Energy, Nordic UART, with the same binary frames as Classic
+Binary. Use it for a BLE-only module such as ESP32-C3 or ESP32-C6, or when
+you want the lower idle radio of BLE.
+
+\begin{itemize}[leftmargin=1.4cm]
+  \item App: board \ui{DevKit}, mode \ui{BLE + Binary}.
+  \item Board name \code{ESP32-TC-RC-BLE-Binary}.
+  \item Handshake \code{RC:CONNECT,proto,binary}.
+  \item There is no Classic PIN. Scan for the BLE name. Do not pair it as
+        a Classic device.
+\end{itemize}
+
+\section{SoftAP camera is not a mode}
+
+\ui{Use SoftAP camera} is a switch on a DevKit Bluetooth mode. The control
+mode stays Classic Simple, Classic Binary, or BLE Binary.
+
+\begin{itemize}[leftmargin=1.4cm]
+  \item Flash \code{TeleCon_CAM_SoftAP_Video} on a separate ESP32-CAM.
+  \item Join \code{TeleCon-RC-CAM-Starter} / \code{telecon1234} for the
+        picture only.
+  \item Sticks stay on the Bluetooth mode you already selected.
+  \item The phone does not open TCP port 3333 for this overlay.
+\end{itemize}
+
+One ESP32-CAM does not carry the sticks. A DevKit does Bluetooth, and a
+second CAM does video only.
+
+\end{document}

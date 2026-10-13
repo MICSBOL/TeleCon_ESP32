@@ -48,21 +48,21 @@
 The Android app downloads one ZIP per connection from the firmware
 repository. Each ZIP is one Arduino sketch, and the sketch is the
 \texttt{.ino} with the same name. This note names every Bluetooth control
-sketch and every ESP32-CAM sketch, and the two ways to add a camera.
+sketch and the ESP32-CAM sketch. The camera connects only with a DevKit
+over Bluetooth and a separate ESP32-CAM for video.
 \end{abstract}
 
 {\sffamily\scriptsize
 \chip{TblChan}{DevKit + Bluetooth}
-\chip{TblTelem}{CAM video only + DevKit}
-\chip{TblKnob}{One CAM: video and control}}
+\chip{TblTelem}{CAM video only + DevKit}}
 
 \tableofcontents
 \vspace{1em}
 
-\section{Two ways to add a camera}
+\section{The only way to connect the camera}
 
-Sticks, buttons, and telemetry always need a control sketch. Video is
-optional and uses an ESP32-CAM. Pick one of these layouts.
+The picture does not come from the same board as the sticks. Two boards
+are required, and the app has no other camera layout.
 
 \begin{center}
 \renewcommand{\arraystretch}{1.28}
@@ -71,19 +71,23 @@ optional and uses an ESP32-CAM. Pick one of these layouts.
                 >{\raggedright\arraybackslash}p{5.4cm}
                 >{\raggedright\arraybackslash}p{5.2cm}}
 \rowcolor{TblHead}
-\thc{Layout} & \thc{Boards} & \thc{Sketches} \\
+\thc{Role} & \thc{Board} & \thc{Sketch} \\
 \rowcolor{TblChan}
-Bluetooth only & One ESP32 DevKit & One of the three Bluetooth \texttt{.ino} files \\
+Sticks & ESP32 DevKit & One of the three Bluetooth \texttt{.ino} files \\
 \rowcolor{TblTelem}
-Camera only, plus Bluetooth & ESP32-CAM for video, DevKit for sticks & \texttt{TeleCon\_CAM\_SoftAP\_Video.ino} on the CAM, and one Bluetooth sketch on the DevKit \\
-\rowcolor{TblKnob}
-Control and camera together & One ESP32-CAM & \texttt{TeleCon\_CAM\_WiFi\_Simple.ino} or \texttt{TeleCon\_CAM\_WiFi\_Binary.ino} \\
+Picture & ESP32-CAM & \texttt{TeleCon\_CAM\_\-SoftAP\_Video.ino} \\
 \end{tabular}
 \end{center}
 
-The phone joins the camera SoftAP for the picture. It does not send sticks
-over that video link. Sticks go to the control sketch: Bluetooth on the
-DevKit, or TCP on the single CAM that also serves video.
+Flash the video sketch on the CAM and one Bluetooth sketch on the DevKit.
+On the phone, keep the Bluetooth mode pointed at the DevKit and turn on
+the camera overlay. The phone joins Wi-Fi \texttt{TeleCon-RC-CAM-Starter},
+password \texttt{telecon1234}, for the picture only. Sticks stay on
+Bluetooth. One ESP32-CAM does not carry them, and control does not travel
+on the camera Wi-Fi.
+
+With no camera, the DevKit and one of the three Bluetooth sketches are
+enough. That board has no video.
 
 \section{Bluetooth control on an ESP32 DevKit}
 
@@ -116,6 +120,8 @@ the sketch: stick \texttt{rx} $= 0$ is a $1500$\,\textmu s pulse. Eight
 telemetry bytes (phone CH1--CH8) are chosen in
 \texttt{kTelemetryChannels[]} in this same file. With \texttt{ENABLE\_PLOT}
 at 1 the board sends \texttt{RC:PLOT} about every 50\,ms.
+The code guide for this sketch is
+\texttt{telecon\_classic\_simple\_code.tex} in this documentation set.
 
 \paragraph{\texttt{TeleCon\_Classic\_Binary.ino}}
 The \texttt{.ino} only starts Bluetooth and the vehicle modules. Pins,
@@ -154,53 +160,7 @@ ZIP \texttt{TeleCon\_CAM\_SoftAP\_Video.zip}. Flash an ESP32-CAM
 On the phone, turn on the camera overlay and keep the Bluetooth connection
 pointed at the DevKit (Classic Simple, Classic Binary, or BLE Binary).
 The phone uses Wi-Fi for the CAM and Bluetooth for the sticks at the same
-time. Do not flash \texttt{TeleCon\_CAM\_WiFi\_Simple} for this layout:
-that sketch is the single-board case.
-
-\section{ESP32-CAM, control and camera on one board}
-
-One ESP32-CAM does both jobs. There is no second DevKit and no Bluetooth
-on this board. Control is TCP on the same SoftAP as the video. These
-sketches are for \ui{RC Vehicle Pro} with board \ui{CAM}.
-
-\begin{center}
-\renewcommand{\arraystretch}{1.28}
-\setlength{\tabcolsep}{4pt}
-\begin{tabular}{>{\raggedright\arraybackslash}p{4.4cm}
-                >{\raggedright\arraybackslash}p{4.4cm}
-                >{\raggedright\arraybackslash}p{5.4cm}}
-\rowcolor{TblHead}
-\thc{ZIP / \texttt{.ino}} & \thc{Phone setting} & \thc{On the air} \\
-\rowcolor{TblKnob}
-\texttt{TeleCon\_CAM\_WiFi\_Simple} & Board CAM, Wi-Fi CAM Starter & SoftAP \texttt{TeleCon-RC-CAM-Starter} / \texttt{telecon1234}. Video on \texttt{192.168.4.1}. Sticks on TCP \texttt{192.168.4.1:3333}, handshake \texttt{proto,simple}. \\
-\rowcolor{TblKnob}
-\texttt{TeleCon\_CAM\_WiFi\_Binary} & Board CAM, Wi-Fi SoftAP Binary & SoftAP \texttt{TeleCon-RC-CAM} / \texttt{telecon1234}. Same video host. Sticks on TCP port 3333, handshake \texttt{proto,binary}. \\
-\end{tabular}
-\end{center}
-
-\paragraph{\texttt{TeleCon\_CAM\_WiFi\_Simple.ino}}
-Text control, same idea as Classic Simple, plus the camera stream.
-Camera pins stay free: put motors in \texttt{onControl()} and
-\texttt{onButton()} on pins that the camera is not using. The file points
-at the binary CAM sketch when you outgrow the single file.
-
-\paragraph{\texttt{TeleCon\_CAM\_WiFi\_Binary.ino}}
-Binary frames (\texttt{AA 55}, \texttt{BB 66}, \texttt{CC 11/22/33}) and
-video on one CAM. \texttt{CameraStream} owns the SoftAP. The \texttt{.ino}
-starts Wi-Fi control, the vehicle modules, and the camera. With
-\texttt{TELECON\_VEHICLE\_IO} left at 0, camera pins stay free and motor
-outputs stay off until you enable IO and move those pins.
-
-\section{ESP32 DevKit over Wi-Fi, no camera}
-
-\paragraph{\texttt{TeleCon\_WiFi\_Binary.ino}}
-ZIP \texttt{TeleCon\_WiFi\_Binary.zip}. This is not a Bluetooth sketch and
-it has no camera. The board is its own SoftAP
-\texttt{ESP32-TC-RC-WiFi-Binary}, password \texttt{telecon1234}. Sticks
-use binary frames on TCP \texttt{192.168.4.1:3333}, handshake
-\texttt{proto,binary}. In the app choose board DevKit and Wi-Fi SoftAP
-Binary. The plot still sends four samples on this sketch; the eight-channel
-table is only on the Bluetooth sketches.
+time. Do not put stick control on the ESP32-CAM.
 
 \section{What the ZIP contains}
 

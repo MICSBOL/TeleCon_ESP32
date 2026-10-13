@@ -252,8 +252,8 @@ for pictures; Bluetooth or TCP carries sticks.
         An ESP32-CAM is optional and only needed for video.
 \end{itemize}
 
-Stay on \ui{Default} and \ui{Classic Simple} until that path works.
-\ui{Advanced} (Binary, BLE, DevKit Wi-Fi, CAM Binary) is for later.
+Start with \ui{Classic Simple} until that path works.
+Classic Binary and BLE Binary are in the same connection list.
 
 \section{Safety}
 \label{sec:safety}
@@ -308,14 +308,13 @@ English UI.}
 \subsection*{3 --- Get the starter sketch, match settings, then connect}
 
 Open \ui{Control panel} $\rightarrow$ settings (gear).
-\ui{User type} = \ui{Default}.
 \ui{Connection} = Bluetooth, \ui{Classic + Simple (text lines)}.
 Under \ui{Matching firmware}, tap the matching code link for
 \texttt{TeleCon\_Classic\_Simple}, share or save the ZIP, copy it to the
 computer, and open the \texttt{.ino} folder in Arduino IDE.
 
-\shot{S03}{s03_settings_default.png}{Portrait, light theme, scrolled to User type}
-{Control panel settings. User type Default, Connection Bluetooth +
+\shot{S03}{s03_settings_default.png}{Portrait, light theme, Connection visible}
+{Control panel settings. Connection Bluetooth +
 Classic + Simple (text lines), and Matching firmware with the
 TeleCon Classic Simple code link. English UI.}
 
@@ -420,8 +419,7 @@ The module settings tell the app which link to open.
 
 \subsection{Bluetooth}
 
-Used by DevKit sketches: Classic Simple (Default), Classic Binary, BLE Binary
-(Advanced).
+Used by DevKit sketches: Classic Simple, Classic Binary, and BLE Binary.
 
 \begin{enumerate}[leftmargin=1.5cm]
   \item Allow Nearby devices (or Location on older Android).
@@ -435,13 +433,12 @@ Forget the device in system Bluetooth settings and scan again.
 
 \subsection{Board Wi-Fi (SoftAP)}
 
-Used by CAM video and by some Advanced DevKit Wi-Fi builds.
-The phone leaves home Wi-Fi. No internet on that network is normal.
+Used by the video-only ESP32-CAM. The phone leaves home Wi-Fi for the
+picture. No internet on that network is normal. Sticks stay on Bluetooth.
 
-Default CAM network: SSID \texttt{TeleCon-RC-CAM-Starter},
+Camera network: SSID \texttt{TeleCon-RC-CAM-Starter},
 password \texttt{telecon1234}.
-Then tap Connect in the module so control can use TCP
-\texttt{192.168.4.1:3333} (Role~B) or stay on Bluetooth (Role~A).
+The camera board does not take stick control.
 
 \shot{S09}{s09_wifi_join.png}{Portrait, Android Wi-Fi settings}
 {System Wi-Fi picker with TeleCon-RC-CAM-Starter visible under Available
@@ -500,7 +497,7 @@ Show which items are locked if running a free account.}
 Pro driving cockpit.
 Unlock with subscription, coins, or the occasional explorer gift (short ad).
 
-Two hardware layouts:
+One hardware layout for video:
 
 \begin{center}
 \renewcommand{\arraystretch}{1.25}
@@ -508,21 +505,16 @@ Two hardware layouts:
                 >{\raggedright\arraybackslash}p{4.4cm}
                 >{\raggedright\arraybackslash}p{5.4cm}}
 \rowcolor{TblHead}
-\thc{Role} & \thc{Boards} & \thc{What the phone does} \\
-\rowcolor{TblChan}
-Default B & One ESP32-CAM &
-  Join CAM Wi-Fi. Video HTTP. Control on TCP :3333. \\
+\thc{Layout} & \thc{Boards} & \thc{What the phone does} \\
 \rowcolor{TblKnob}
-A overlay & CAM + DevKit &
+Camera overlay & CAM + DevKit &
   CAM Wi-Fi for video only. Sticks on DevKit Bluetooth. \\
 \end{tabular}
 \end{center}
 
 \vspace{0.35em}
 {\sffamily\scriptsize
-\chip{TblChan}{One CAM --- Default}
-\chip{TblKnob}{CAM video + DevKit Bluetooth}
-\chip{TblId}{Not one CAM for both SoftAP and Bluetooth}}
+\chip{TblKnob}{CAM video + DevKit Bluetooth}}
 
 Steer center trim lives under Tune on the HUD (tickers $\rightarrow$ Check).
 The board stores the bias.
@@ -530,38 +522,36 @@ The board stores the bias.
 \shot{S12}{s12_rc_vehicle.jpg}{Landscape HUD}
 {RC Vehicle live screen: dual sticks, HUD telemetry, and the camera pane
 (live MJPEG or the in-app camera help card if the stream is idle).
-English UI. Prefer Role B Default with video online if you can.}
+English UI. Video, when used, comes from a separate ESP32-CAM.}
 
 \shot{S13}{s13_vehicle_settings.png}{Portrait, Connection / CAM section}
-{RC Vehicle settings: CAM feature One ESP32-CAM (simple), User type Default,
-Role B SoftAP + Simple, SSID TeleCon-RC-CAM-Starter. English UI on this capture.}
+{RC Vehicle settings: optional SoftAP camera on a second ESP32-CAM,
+SSID TeleCon-RC-CAM-Starter. Sticks stay on DevKit Bluetooth.
+English UI on this capture.}
 
-\section{Default vs Advanced}
+\section{Connection modes}
 \label{sec:modes}
 
-\ui{User type} in module settings hides the scary options on purpose.
+Classic Simple, Classic Binary, and BLE Binary are all listed in module
+settings. Pick the row that matches the sketch.
 
 \begin{center}
 \renewcommand{\arraystretch}{1.22}
 \begin{tabular}{>{\raggedright\arraybackslash}p{2.8cm}
                 >{\raggedright\arraybackslash}p{9.4cm}}
 \rowcolor{TblHead}
-\thc{User type} & \thc{Typical link} \\
+\thc{Mode} & \thc{Link} \\
 \rowcolor{TblChan}
-Default &
-  DevKit Classic Simple, or one CAM SoftAP Simple, or Role~A
-  (video-only CAM + DevKit Classic Simple). Free. \\
+Classic Simple &
+  DevKit text lines, or the same mode plus a video-only ESP32-CAM. \\
 \rowcolor{TblSync}
-Advanced &
-  Classic Binary, BLE Binary, DevKit Wi-Fi Binary, CAM SoftAP Binary.
-  Coins or Pro. \\
+Classic Binary and BLE Binary &
+  DevKit binary frames. The same optional video-only ESP32-CAM. \\
 \end{tabular}
 \end{center}
 
 The firmware on the board must match the row you pick.
 After a change, disconnect and connect again.
-\ui{Restore original defaults} puts that module back on the starter Default
-link.
 
 \section{Codes and About}
 \label{sec:docs}
@@ -578,8 +568,8 @@ link.
 \section{Coins and Pro}
 \label{sec:coins}
 
-\ui{Control panel} stays free on Default Simple.
-\ui{RC Vehicle}, Advanced connection options, and extra center views
+\ui{Control panel} stays free on Classic Simple.
+\ui{RC Vehicle} and extra center views
 (Camera, Radar, Stick graph, session CSV) need coins or a Pro subscription.
 
 \paragraph{Where to look.}
@@ -630,8 +620,8 @@ rewarded-ad earn loop. Details and pricing are in the Play subscription
 sheet.
 
 \shot{S14}{s14_coin_unlock.png}{Portrait, unlock dialog}
-{Coin unlock dialog for a specific module (for example RC Vehicle or
-Advanced settings): duration choices and confirm. English UI.}
+{Coin unlock dialog for a specific module (for example RC Vehicle):
+duration choices and confirm. English UI.}
 
 \section{When it fails}
 \label{sec:fix}
@@ -656,7 +646,7 @@ Home still Not connected &
 \rowcolor{TblSw}
 Sticks / gauges dead &
   Stay on the live screen. Settings must match the sketch
-  (Default Classic Simple for the first session). Reflash if Serial
+  (Classic Simple for the first session). Reflash if Serial
   never shows ready. \\
 ``Couldn't connect'' /
   handshake timeout &

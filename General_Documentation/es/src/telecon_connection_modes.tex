@@ -1,0 +1,162 @@
+% Modos de conexión TeleCon — qué significa el ajuste del teléfono.
+% Compilar: pdflatex -output-directory=../build telecon_connection_modes.tex
+% PDF entregado: ../build/connection_modes_esp.pdf
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[margin=2.4cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[spanish]{babel}
+\usepackage{lmodern}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{colortbl}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{needspace}
+\usepackage{etoolbox}
+
+\preto\section{\Needspace{8\baselineskip}}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=black,
+  urlcolor=blue,
+  pdftitle={Modos de conexión TeleCon},
+  pdfauthor={TeleCon}
+}
+
+\makeatletter
+\g@addto@macro\UrlBreaks{\do\_\do\-\do\/\do\:}
+\makeatother
+\newcommand{\code}[1]{\nolinkurl{#1}}
+
+\definecolor{TblHead}{HTML}{0F6F73}
+\definecolor{TblChan}{HTML}{D5F5E3}
+\definecolor{TblTelem}{HTML}{D4E6F1}
+\definecolor{TblKnob}{HTML}{F5CBA7}
+
+\newcommand{\thc}[1]{\textcolor{white}{\bfseries #1}}
+\newcommand{\chip}[2]{\colorbox{#1}{\strut\,\scriptsize #2\,}}
+\newcommand{\ui}[1]{\textsf{\textbf{#1}}}
+
+\title{Modos de conexión TeleCon\\[0.3em]
+\large Qué elegir antes de conectar}
+\author{El ajuste del teléfono, la placa y el sketch deben coincidir}
+\date{Versión 1.0 \quad 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Un modo de conexión es el enlace que el teléfono abre con la ESP32.
+Elíjalo en los ajustes de la aplicación antes de pulsar Conectar. El
+sketch grabado en la placa debe usar el mismo saludo. Esta nota enumera
+cada modo que la aplicación sigue ofreciendo, y la cámara superpuesta,
+que no es un modo aparte.
+\end{abstract}
+
+{\sffamily\scriptsize
+\chip{TblKnob}{Cámara superpuesta}}
+
+\tableofcontents
+\vspace{1em}
+
+\section{Elija el modo antes de conectar}
+
+El teléfono no cambia el sketch cuando usted cambia el modo. Solo cambia
+cómo habla. Elija el modo y después conecte. Classic Simple, Classic
+Binario y BLE Binario están todos disponibles.
+
+\begin{itemize}[leftmargin=1.4cm]
+  \item El modo sigue vigente para esa aplicación hasta que lo cambie.
+        No hace falta reconectar solo para reasignar un canal de
+        telemetría. Sí hace falta reconectar, y volver a grabar, cuando
+        cambia el saludo.
+\end{itemize}
+
+\section{Los modos de un vistazo}
+
+\begin{center}
+\small
+\renewcommand{\arraystretch}{1.25}
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{>{\raggedright\arraybackslash}p{4.2cm}
+                >{\raggedright\arraybackslash}p{2.4cm}
+                >{\raggedright\arraybackslash}p{7.2cm}}
+\rowcolor{TblHead}
+\thc{Modo en la aplicación} & \thc{Placa} & \thc{Sketch} \\
+\rowcolor{TblChan}
+Classic + Simple & DevKit & \code{TeleCon_Classic_Simple} \\
+\rowcolor{TblChan}
+Classic + Binario & DevKit & \code{TeleCon_Classic_Binary} \\
+\rowcolor{TblChan}
+BLE + Binario & DevKit & \code{TeleCon_BLE_Binary} \\
+\end{tabular}
+\end{center}
+
+La fila opcional \ui{Usar cámara SoftAP} se suma a los tres modos
+Bluetooth. No los sustituye. Vea la última sección.
+
+\section{Classic + Simple}
+
+Bluetooth Classic, líneas de texto. Es el primer modo que conviene usar.
+
+\begin{itemize}[leftmargin=1.4cm]
+  \item Aplicación: placa \ui{DevKit}, modo
+        \ui{Classic + Simple (líneas de texto)}.
+  \item Nombre de la placa \code{ESP32-TC-RC-BT-Simple}, PIN \code{1234}.
+  \item Saludo \code{RC:CONNECT,proto,simple}.
+  \item Palancas, botones y telemetría son líneas como \code{RC:CTRL},
+        \code{RC:BTN}, \code{RC:DATA} y \code{RC:PLOT}.
+  \item Ocho bytes de telemetría (CH1--CH8) cuando el sketch envía el
+        gráfico.
+\end{itemize}
+
+\section{Classic + Binario}
+
+La misma radio Classic que Simple, con tramas binarias cortas en lugar de
+texto. Más ritmo, los mismos pines, menos que leer en el Monitor Serie.
+
+\begin{itemize}[leftmargin=1.4cm]
+  \item Aplicación: placa \ui{DevKit}, modo \ui{Classic + Binario}.
+  \item Nombre de la placa \code{ESP32-TC-RC-BT-Binary}.
+  \item Saludo \code{RC:CONNECT,proto,binary}.
+  \item Las tramas empiezan por \code{AA 55} (palancas), \code{BB 66}
+        (botones) y \code{CC 11/22/33} (telemetría).
+  \item No empareje esta placa como BLE, y no deje el teléfono en Simple.
+\end{itemize}
+
+\section{BLE + Binario}
+
+Bluetooth de baja energía, Nordic UART, con las mismas tramas binarias que
+Classic Binario. Úselo en un módulo que solo tenga BLE, como ESP32-C3 o
+ESP32-C6, o cuando quiera el radio en reposo más bajo de BLE.
+
+\begin{itemize}[leftmargin=1.4cm]
+  \item Aplicación: placa \ui{DevKit}, modo \ui{BLE + Binario}.
+  \item Nombre de la placa \code{ESP32-TC-RC-BLE-Binary}.
+  \item Saludo \code{RC:CONNECT,proto,binary}.
+  \item No hay PIN de Classic. Busque el nombre BLE. No lo empareje como
+        un dispositivo Classic.
+\end{itemize}
+
+\section{La cámara SoftAP no es un modo}
+
+\ui{Usar cámara SoftAP} es un interruptor sobre un modo Bluetooth de
+DevKit. El modo de control sigue siendo Classic Simple, Classic Binario o
+BLE Binario.
+
+\begin{itemize}[leftmargin=1.4cm]
+  \item Grabe \code{TeleCon_CAM_SoftAP_Video} en una ESP32-CAM aparte.
+  \item Únase a \code{TeleCon-RC-CAM-Starter} / \code{telecon1234} solo
+        para la imagen.
+  \item Las palancas siguen en el modo Bluetooth que ya eligió.
+  \item El teléfono no abre el puerto TCP 3333 para esta superposición.
+\end{itemize}
+
+La ESP32-CAM no lleva las palancas. Una DevKit hace Bluetooth y una
+segunda CAM hace solo el video.
+
+\end{document}
