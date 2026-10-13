@@ -1,6 +1,6 @@
 % TeleCon Classic Simple — code guide for the Arduino sketch.
 % Build: pdflatex -output-directory=../build telecon_classic_simple_code.tex
-% Delivered PDF: ../build/telecon_classic_simple_code.pdf
+% PDF: ../build/telecon_classic_simple_code.pdf
 \documentclass[11pt,a4paper]{article}
 
 \usepackage[margin=2.2cm]{geometry}
@@ -15,11 +15,20 @@
 \usepackage{enumitem}
 \usepackage{needspace}
 \usepackage{etoolbox}
-\usepackage{fancyvrb}
+\usepackage{listings}
+\usepackage{upquote}
 \usepackage{tikz}
-\usetikzlibrary{arrows.meta,positioning,shapes.geometric,fit,backgrounds}
+\usepackage[breakable]{tcolorbox}
+\usetikzlibrary{arrows.meta,positioning,shapes.geometric,fit,backgrounds,matrix}
 
 \preto\section{\Needspace{8\baselineskip}}
+\preto\subsection{\Needspace{5\baselineskip}}
+\emergencystretch=3.5em
+
+% Wide enough for "Annex A" in the contents, on the same line as the file name.
+\makeatletter
+\patchcmd{\l@section}{\setlength\@tempdima{1.5em}}{\setlength\@tempdima{5.8em}}{}{}
+\makeatother
 
 \hypersetup{
   colorlinks=true,
@@ -36,31 +45,214 @@
 \definecolor{TblTelem}{HTML}{D4E6F1}
 \definecolor{TblLeave}{HTML}{F4F6F7}
 
+% Arduino IDE 1.8 editor (theme.txt + keywords.txt).
+\definecolor{ArduinoType}{HTML}{00979C}
+\definecolor{ArduinoFunc}{HTML}{D35400}
+\definecolor{ArduinoControl}{HTML}{5E6D03}
+\definecolor{ArduinoString}{HTML}{005C5F}
+\definecolor{ArduinoComment}{HTML}{434F54}
+\definecolor{ArduinoName}{HTML}{6C3483}
+\definecolor{ArduinoLineNo}{HTML}{7F8C8D}
+\definecolor{ArduinoFrame}{HTML}{C5C9C9}
+
 \newcommand{\thc}[1]{\textcolor{white}{\bfseries #1}}
 \newcommand{\chip}[2]{\colorbox{#1}{\strut\,\scriptsize #2\,}}
 \newcommand{\ui}[1]{\textsf{\textbf{#1}}}
 \newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\nm}[1]{\textcolor{ArduinoName}{\texttt{#1}}}
+\newcommand{\fnm}[1]{\textcolor{ArduinoFunc}{\texttt{#1}}}
+\newcommand{\typ}[1]{\textcolor{ArduinoType}{\texttt{#1}}}
+\newcommand{\kw}[1]{\textcolor{ArduinoControl}{\texttt{#1}}}
+\newcommand{\str}[1]{\textcolor{ArduinoString}{\texttt{#1}}}
+\newcommand{\cmt}[1]{\textcolor{ArduinoComment}{\texttt{#1}}}
+\newcommand{\ser}[1]{\textcolor{ArduinoFunc}{\textbf{\texttt{Serial}}\texttt{.#1}}}
 
 \newcommand{\sketchfile}{../../../ESP32_noCam/Classic_Simple/TeleCon_Classic_Simple/TeleCon_Classic_Simple.ino}
 \newcommand{\channelfile}{../../../ESP32_noCam/Classic_Simple/TeleCon_Classic_Simple/TelemetryChannels.h}
 
+\lstdefinelanguage{Arduino}{
+  language=C++,
+  alsoletter={\_},
+  keywordstyle=\color{ArduinoType},
+  keywordstyle=[2]\color{ArduinoFunc},
+  keywordstyle=[3]\color{ArduinoControl},
+  keywordstyle=[4]\color{ArduinoFunc}\bfseries,
+  keywordstyle=[5]\color{ArduinoName},
+  commentstyle=\color{ArduinoComment},
+  stringstyle=\color{ArduinoString},
+  directivestyle=\color{ArduinoControl},
+  deletekeywords={%
+    auto,break,case,char,const,continue,default,do,double,else,enum,%
+    extern,float,for,goto,if,int,long,register,return,short,signed,%
+    sizeof,static,struct,switch,typedef,union,unsigned,void,volatile,%
+    while,and,and_eq,asm,bad_cast,bad_typeid,bitand,bitor,bool,catch,%
+    class,compl,const_cast,delete,dynamic_cast,explicit,export,false,%
+    friend,inline,mutable,namespace,new,not,not_eq,operator,or,or_eq,%
+    private,protected,public,reinterpret_cast,static_cast,template,%
+    this,throw,true,try,typeid,type_info,typename,using,virtual,%
+    wchar_t,xor,xor_eq,alignas,alignof,char16_t,char32_t,constexpr,%
+    decltype,noexcept,nullptr,static_assert,thread_local%
+  },
+  morekeywords={%
+    void,int,char,float,double,long,short,signed,unsigned,bool,boolean,%
+    byte,word,const,static,struct,enum,class,sizeof,typedef,volatile,%
+    inline,constexpr,String,uint8_t,uint16_t,uint32_t,uint64_t,%
+    int8_t,int16_t,int32_t,int64_t,true,false,nullptr,NULL,HIGH,LOW,%
+    INPUT,OUTPUT,INPUT_PULLUP%
+  },
+  morekeywords=[2]{%
+    print,println,printf,begin,available,read,readStringUntil,trim,%
+    length,indexOf,substring,startsWith,equalsIgnoreCase,toInt,c_str,%
+    hasClient,disableSSP,setPin,delay,millis,map,constrain,abs,%
+    analogRead,digitalRead,ledcAttach,ledcWrite,ledcRead,ledcSetup,%
+    ledcAttachPin,snprintf,strtol,%
+    setup,loop,%
+    telemetryVehicle,steerDutyFromUs,steerDutyFromRx,%
+    steerServoBegin,steerServoWriteRx,onControl,onButton,%
+    handleSerialInjectLine,serialInjectPoll,stickTo12,%
+    debugPrintControl,debugPrintButton,sendLine,applyFailSafe,%
+    resetHandshake,getValue,handleConnect,handleLine,%
+    telemetryReadPwm,telemetryReadOne,telemetryReadAll%
+  },
+  morekeywords=[3]{%
+    if,else,for,while,do,switch,case,default,break,continue,return,%
+    goto%
+  },
+  morekeywords=[4]{Serial},
+  morekeywords=[5]{%
+    BT_NAME,BT_PIN,APP_PREFIX,PROTO_WIRE,SERIAL_BAUD,%
+    ENABLE_DEBUG,DBG_PRINT,DBG_PRINTLN,DBG_PRINTF,%
+    TELEMETRY_DATA_MS,ENABLE_PLOT,PLOT_MS,%
+    ENABLE_SERIAL_INJECT,SERIAL_MAX_LINE,%
+    DEMO_MOTOR_TEMP,DEMO_BATT_PCT,%
+    ENABLE_STEER_SERVO,PIN_STEER_SERVO,CH_STEER_SERVO,%
+    ESP_ARDUINO_VERSION_MAJOR,%
+    SerialBT,handshakeOk,btWasConnected,%
+    g_lx,g_ly,g_rx,g_ry,g_lk,g_rk,g_sw,%
+    lastDataMs,lastPlotMs,serialLineBuf,%
+    lastPrintLX,lastPrintLY,lastPrintRX,lastPrintRY,%
+    lastPrintKnobL,lastPrintKnobR,lastPrintSw,%
+    kTelemetryChannels,kSteerCenterUs,kSteerTravelUs,%
+    TelKind,TelVehicle,TelChannel,TelVehicleFn,%
+    TEL_VEHICLE,TEL_ADC,TEL_GPIO,TEL_PWM,%
+    TEL_TEMP,TEL_THROTTLE,TEL_BATT,TEL_STEER,TEL_LIGHTS,%
+    TEL_KNOB_L,TEL_KNOB_R,TEL_RY,%
+    kind,vehicle,pin,ledcChannel,dutyMin,dutyMax%
+  },
+  literate=
+    {µ}{{\textmu}}1
+    {×}{{$\times$}}1
+    {–}{{\textendash}}1
+    {—}{{\textemdash}}1
+    {…}{{\ldots}}1
+    {→}{{$\rightarrow$}}1
+}
+
+\lstset{
+  language=Arduino,
+  basicstyle=\ttfamily\normalsize,
+  numbers=left,
+  numberstyle=\footnotesize\color{ArduinoLineNo},
+  numbersep=6pt,
+  stepnumber=1,
+  frame=single,
+  framerule=0.4pt,
+  rulecolor=\color{ArduinoFrame},
+  framesep=3pt,
+  framexleftmargin=0pt,
+  backgroundcolor=\color{white},
+  breaklines=true,
+  breakindent=0pt,
+  columns=fullflexible,
+  keepspaces=true,
+  showstringspaces=false,
+  showtabs=false,
+  tabsize=2,
+  upquote=true,
+  xleftmargin=2.15em,
+  aboveskip=0.65em,
+  belowskip=0.45em
+}
+
 \newcommand{\inosnippet}[2]{%
-  \VerbatimInput[%
-    firstline=#1,lastline=#2,%
-    numbers=left,firstnumber=#1,%
-    fontsize=\footnotesize,%
-    frame=single,framerule=0.4pt,rulecolor=\color{TblHead},%
-    xleftmargin=1.8em%
-  ]{\sketchfile}%
+  \par\addvspace{1.35em}%
+  \lstinputlisting[firstline=#1,lastline=#2,firstnumber=#1,aboveskip=0.4em]{\sketchfile}%
 }
 \newcommand{\hsnippet}[2]{%
-  \VerbatimInput[%
-    firstline=#1,lastline=#2,%
-    numbers=left,firstnumber=#1,%
-    fontsize=\footnotesize,%
-    frame=single,framerule=0.4pt,rulecolor=\color{TblHead},%
-    xleftmargin=1.8em%
-  ]{\channelfile}%
+  \par\addvspace{1.35em}%
+  \lstinputlisting[firstline=#1,lastline=#2,firstnumber=#1,aboveskip=0.4em]{\channelfile}%
+}
+\newcommand{\fnat}[4]{%
+  \par\addvspace{1.15em}%
+  \noindent{\ttfamily\Large\raggedright #1\par}%
+  \nopagebreak
+  \lstinputlisting[firstline=#3,lastline=#4,firstnumber=#3,%
+    aboveskip=0.55em,belowskip=0.35em,%
+    backgroundcolor=\color{FnShade}]{#2}%
+  \noindent\ignorespaces
+}
+\newcommand{\fn}[3]{\fnat{#1}{\sketchfile}{#2}{#3}}
+\newcommand{\fnh}[3]{\fnat{#1}{\channelfile}{#2}{#3}}
+\newcommand{\fntwo}[5]{%
+  \par\addvspace{1.15em}%
+  \noindent{\ttfamily\Large\raggedright #1\par}%
+  \nopagebreak
+  \lstinputlisting[firstline=#2,lastline=#3,firstnumber=#2,%
+    aboveskip=0.55em,belowskip=0.2em,%
+    backgroundcolor=\color{FnShade}]{\sketchfile}%
+  \lstinputlisting[firstline=#4,lastline=#5,firstnumber=#4,%
+    aboveskip=0.2em,belowskip=0.35em,%
+    backgroundcolor=\color{FnShade}]{\sketchfile}%
+  \noindent\ignorespaces
+}
+% Snippet on the left, title and explanation on the right.
+% Measured boxes so the code frame sits on the vertical center of the text.
+\newsavebox{\fnstepcode}
+\newsavebox{\fnsteptext}
+\newcommand{\fnstepat}[5]{%
+  \par\addvspace{1.7em}%
+  \sbox{\fnstepcode}{%
+    \begin{minipage}[b]{0.50\linewidth}
+      \lstinputlisting[firstline=#2,lastline=#3,firstnumber=#2,%
+        basicstyle=\ttfamily\footnotesize,%
+        numberstyle=\scriptsize\color{ArduinoLineNo},%
+        numbersep=5pt,framesep=3pt,framexleftmargin=0pt,%
+        xleftmargin=2.2em,aboveskip=0pt,belowskip=0pt,%
+        breaklines=true,breakindent=0pt,%
+        backgroundcolor=\color{FnShade}]{#1}%
+    \end{minipage}}%
+  \sbox{\fnsteptext}{%
+    \begin{minipage}[b]{0.44\linewidth}
+      {\raggedright\Large\bfseries #4\par}%
+      \vspace{0.45em}%
+      \raggedright #5\par
+    \end{minipage}}%
+  \noindent
+  % Listings' frame sits a little above the measured box; nudge the code down.
+  \raisebox{\dimexpr(\ht\fnsteptext-\ht\fnstepcode+\dp\fnstepcode-\dp\fnsteptext)/2-8pt\relax}{\usebox{\fnstepcode}}%
+  \hspace{0.04\linewidth}%
+  \usebox{\fnsteptext}%
+  \par
+}
+\newcommand{\fnstep}[4]{\fnstepat{\sketchfile}{#1}{#2}{#3}{#4}}
+\newcommand{\fnhstep}[4]{\fnstepat{\channelfile}{#1}{#2}{#3}{#4}}
+
+\definecolor{FnShade}{gray}{1}
+\newcounter{fnband}
+\newenvironment{fnblock}{%
+  \par
+  \stepcounter{fnband}%
+  \ifodd\value{fnband}%
+    \colorlet{FnShade}{black!4}%
+  \else
+    \colorlet{FnShade}{white}%
+  \fi
+  \begin{tcolorbox}[%
+    breakable,colback=FnShade,colframe=FnShade,boxrule=0pt,%
+    arc=0pt,left=18pt,right=18pt,top=6pt,bottom=8pt,boxsep=0pt,%
+    before skip=0.6em,after skip=1.15em,pad at break*=2pt]%
+}{%
+  \end{tcolorbox}%
 }
 
 \tikzset{
@@ -83,494 +275,522 @@
 \maketitle
 
 \begin{abstract}
-This note is the Arduino sketch
-\texttt{ESP32\_noCam/Classic\_Simple/TeleCon\_Classic\_Simple/}.
+This note is the Arduino sketch in the folder
+\texttt{Classic\_Simple/TeleCon\_Classic\_Simple/}.
 The phone setting is Classic + Simple. The board name is
-\texttt{ESP32-TC-RC-BT-Simple}. The handshake is
-\texttt{RC:CONNECT,proto,simple}. The pages below show every file the
-IDE compiles, how one session runs, and the three places a vehicle
-sketch is supposed to change: \texttt{onControl()}, \texttt{onButton()},
-and \texttt{kTelemetryChannels[]}.
+\str{ESP32-TC-RC-BT-Simple}. The handshake is
+\str{RC:CONNECT,proto,simple}.
+The declarations of each file come first: includes, macros,
+variables, and types. Then each function, with its code in the IDE
+colors.
+The two complete files are the annexes.
 \end{abstract}
 
 {\sffamily\scriptsize
-\chip{TblEdit}{Change this}
-\chip{TblChan}{Already working}
-\chip{TblLeave}{Leave it alone}}
+IDE color:
+\textcolor{ArduinoType}{\texttt{void}},
+\textcolor{ArduinoControl}{\texttt{if}},
+\textcolor{ArduinoControl}{\texttt{\#define}},
+\textcolor{ArduinoFunc}{\textbf{\texttt{Serial}}}\textcolor{ArduinoFunc}{\texttt{.print}},
+\textcolor{ArduinoString}{\texttt{"text"}},
+\textcolor{ArduinoName}{\texttt{BT\_NAME}},
+\textcolor{ArduinoComment}{\texttt{// comment}}.}
 
 \tableofcontents
-\vspace{0.6em}
+\clearpage
 
-\section{The folder Arduino opens}
+\section{File declarations}
+\label{sec:decl}
 
-Open the folder that contains the \texttt{.ino}. The IDE compiles every
-source in that folder. \texttt{README.md} is not compiled.
+This is the head of each file: what the compiler sees before the first
+function body. The code uses the IDE colors. The line numbers are the
+line numbers of the file.
 
-\begin{center}
-\begin{tikzpicture}[node distance=4mm]
-  \node[leave, minimum width=11.2cm] (dir) {\texttt{TeleCon\_Classic\_Simple/}};
-  \node[flow, below=of dir, minimum width=11.2cm] (ino)
-    {\texttt{TeleCon\_Classic\_Simple.ino}\\
-     \scriptsize setup, loop, handshake, servo, your actuators};
-  \node[flow, below=of ino, minimum width=11.2cm] (h)
-    {\texttt{TelemetryChannels.h}\\
-     \scriptsize how one CH row becomes a byte 0--255};
-  \node[leave, below=of h, minimum width=11.2cm] (md)
-    {\texttt{README.md}\\
-     \scriptsize flash steps and the channel table, not part of the binary};
-  \draw[arr] (dir) -- (ino);
-  \draw[arr] (ino) -- (h);
-  \draw[arr] (h) -- (md);
-\end{tikzpicture}
-\end{center}
+\subsection{In \texttt{TelemetryChannels.h}}
 
-Board in the Arduino IDE: \ui{ESP32 Dev Module}. Serial Monitor:
-115200~baud, line ending Newline. In the phone: Board DevKit, connection
-Classic + Simple. Pair \texttt{ESP32-TC-RC-BT-Simple}. If Android asks
-for a PIN, it is \texttt{1234}.
+The \texttt{.ino} includes this header, so these names exist before
+\nm{kTelemetryChannels[]}.
 
-Do not copy this sketch onto an ESP32-CAM. Video uses the
-video-only sketch on a second board. Sticks stay on this Bluetooth link.
+\hsnippet{1}{15}
 
-\section{One session, from pair to plot}
-\label{sec:session}
+\kw{\#pragma once} brings the file into the build once, even if
+something includes it twice. \texttt{Arduino.h} brings
+\typ{uint8\_t}, \fnm{analogRead}, \fnm{digitalRead}, and
+\fnm{ledcRead}. The comment in the middle generates no code: CH1
+is \str{v0}, CH8 is \str{v7}, and each sample is a byte 0--255.
 
-Nothing in \texttt{onControl()} runs until the phone has completed the
-handshake. Telemetry is the same: \texttt{loop()} returns early while
-\texttt{handshakeOk} is false.
+\hsnippet{17}{33}
 
-\begin{center}
-\begin{tikzpicture}[
-  node distance=2.4mm,
-  every node/.style={flow, text width=10.6cm}
-]
-  \node (a) {Phone pairs \texttt{ESP32-TC-RC-BT-Simple}};
-  \node[below=of a] (b) {\texttt{setup} starts the servo at 1500\,\textmu s and \texttt{SerialBT.begin}};
-  \node[below=of b] (c) {\texttt{loop} sees a client and clears the handshake};
-  \node[below=of c] (d) {Phone sends \texttt{RC:CONNECT,proto,simple}};
-  \node[edit, below=of d, text width=10.6cm] (e) {Board answers \texttt{RC:ACK,app,RC}. Session is open.};
-  \node[below=of e] (f) {\texttt{RC:CTRL} updates sticks. \texttt{RC:BTN} is one press.};
-  \node[edit, below=of f, text width=10.6cm] (g) {\texttt{onControl()} and \texttt{onButton()} --- your motors, lights, horn};
-  \node[below=of g] (h) {Every 500\,ms: \texttt{RC:DATA}. Every 50\,ms: \texttt{RC:PLOT} for CH1--CH8.};
-  \node[leave, below=of h, text width=10.6cm] (i) {Link drops: sticks go to 0, servo returns to center.};
-  \draw[arr] (a) -- (b);
-  \draw[arr] (b) -- (c);
-  \draw[arr] (c) -- (d);
-  \draw[arr] (d) -- (e);
-  \draw[arr] (e) -- (f);
-  \draw[arr] (f) -- (g);
-  \draw[arr] (g) -- (h);
-  \draw[arr] (h) -- (i);
-\end{tikzpicture}
-\end{center}
+\nm{TelKind} says where a row's byte comes from.
+\nm{TEL\_VEHICLE} calls \fnm{telemetryVehicle()}.
+\nm{TEL\_ADC} reads an analog pin. \nm{TEL\_GPIO} reads a digital
+pin. \nm{TEL\_PWM} reads an LEDC duty. The numeric value starts at
+0 and continues in order.
 
-\section{Where to change the sketch}
-\label{sec:edit}
+\nm{TelVehicle} names the built-in signal, only when the row is
+\nm{TEL\_VEHICLE}. \nm{TEL\_TEMP} is temperature,
+\nm{TEL\_THROTTLE} is the throttle, \nm{TEL\_BATT} is the battery,
+\nm{TEL\_STEER} is steering, \nm{TEL\_LIGHTS} is the lights,
+\nm{TEL\_KNOB\_L} and \nm{TEL\_KNOB\_R} are the knobs, and
+\nm{TEL\_RY} is the right stick's Y axis. The factory table does
+not use \nm{TEL\_RY}.
 
-Most of the file is the link. A vehicle project only needs the orange
-rows. Leave the parser, the Bluetooth name, and \texttt{proto,simple}
-alone unless you are deliberately making a different product. The phone
-matches this sketch by that name and that handshake.
+\hsnippet{35}{44}
 
-\begin{center}
-\renewcommand{\arraystretch}{1.22}
-\setlength{\tabcolsep}{4pt}
-\begin{tabular}{>{\raggedright\arraybackslash}p{4.4cm}
-                >{\raggedright\arraybackslash}p{5.6cm}
-                >{\raggedright\arraybackslash}p{5.0cm}}
-\rowcolor{TblHead}
-\thc{You want} & \thc{Edit} & \thc{Leave} \\
-\rowcolor{TblEdit}
-Drive motors, a second servo, lights & \texttt{onControl()}, the block marked \texttt{YOUR CODE HERE} & \texttt{handleLine()}, \texttt{getValue()} \\
-\rowcolor{TblEdit}
-Horn, pan-center, extra buttons & \texttt{onButton()} & Button ids the phone already sends \\
-\rowcolor{TblEdit}
-Stop motors when Bluetooth drops & \texttt{applyFailSafe()}, the second \texttt{YOUR CODE HERE} & The stick reset above that comment \\
-\rowcolor{TblEdit}
-What CH1--CH8 show on the phone & \texttt{kTelemetryChannels[]} in the \texttt{.ino} & Do not add a ninth row \\
-\rowcolor{TblEdit}
-Real temperature or battery & \texttt{telemetryVehicle()}, cases \texttt{TEL\_TEMP} and \texttt{TEL\_BATT}, or change that row to \texttt{TEL\_ADC} & The 0--255 range \\
-\rowcolor{TblEdit}
-Servo on another pin, or no servo & \texttt{PIN\_STEER\_SERVO}, or \texttt{ENABLE\_STEER\_SERVO} set to 0 & \texttt{rx = 0} means 1500\,\textmu s \\
-\rowcolor{TblChan}
-Quiet Serial Monitor & \texttt{ENABLE\_DEBUG}, \texttt{ENABLE\_PLOT}, \texttt{ENABLE\_SERIAL\_INJECT} set to 0 & Flash again after the change \\
-\rowcolor{TblLeave}
-A different phone protocol & Do not retarget this file & Use Classic Binary or BLE Binary \\
-\end{tabular}
-\end{center}
+\nm{TelChannel} is one row of the table. \nm{kind} is the
+\nm{TelKind}. \nm{vehicle} is the \nm{TelVehicle}; an ADC, GPIO,
+or PWM row does not read that field. \nm{pin} is the GPIO, or
+$-1$ when the row has no pin. \nm{ledcChannel} is the LEDC channel
+on core 2.x, or $-1$ when there is no PWM. \nm{dutyMin} and
+\nm{dutyMax} are the ends of the duty range: the minimum is sent
+as 0 and the maximum as 255.
 
-\texttt{rx} is already shifted by the phone trim before it arrives.
-This sketch does not store a steering center. Do not add a
-\texttt{RC:SET,steer\_center} handler.
+\nm{TelVehicleFn} is the type of the pointer to
+\fnm{telemetryVehicle()}: it takes a \nm{TelVehicle} and returns
+a byte.
 
-\section{Name, pin, and switches}
-\label{sec:config}
+\subsection{In \texttt{TeleCon\_Classic\_Simple.ino}}
+
+\inosnippet{1}{14}
+
+The comment block does not enter the binary. It states the Bluetooth
+name, the PIN, and the handshake line. \texttt{BluetoothSerial.h} is
+the Classic port. \texttt{TelemetryChannels.h} is the header above.
 
 \inosnippet{16}{45}
 
-\texttt{BT\_NAME} and \texttt{BT\_PIN} are what Android sees while
-pairing. \texttt{APP\_PREFIX} and \texttt{PROTO\_WIRE} are what
-\texttt{handleConnect()} accepts. If either string changes, the phone
-setting Classic + Simple will get \texttt{RC:NAK} and
-\texttt{onControl()} will never run.
+\nm{BT\_NAME} is the name Android sees when pairing.
+\nm{BT\_PIN} is \str{1234}. \nm{APP\_PREFIX} has to be
+\str{RC} and \nm{PROTO\_WIRE} has to be \str{simple}: those are
+the two strings \fnm{handleConnect()} accepts.
+\nm{SERIAL\_BAUD} is 115200 for the monitor.
 
-\texttt{ENABLE\_DEBUG} turns the \texttt{DBG\_*} macros into
-\texttt{Serial.print}, or into nothing. The session still runs when
-they are empty. \texttt{ENABLE\_PLOT} is the 50\,ms \texttt{RC:PLOT}
-stream. \texttt{ENABLE\_SERIAL\_INJECT} lets you paste one
-\texttt{RC:DATA} or \texttt{RC:PLOT} line into the Serial Monitor after
-the handshake; the next automatic packet replaces it.
-\texttt{DEMO\_MOTOR\_TEMP} and \texttt{DEMO\_BATT\_PCT} are the stand-in
-HUD numbers until a sensor is wired. They are not read from a pin.
+\nm{ENABLE\_DEBUG} at 1 writes to the monitor.
+\nm{DBG\_PRINT} becomes \ser{print}.
+\nm{DBG\_PRINTLN} becomes \ser{println}.
+\nm{DBG\_PRINTF} becomes \ser{printf}.
+At 0 those three macros become empty and the link stays the same.
 
-\section{What the sketch remembers}
+\nm{TELEMETRY\_DATA\_MS} is the dashboard period, 500\,ms.
+\nm{ENABLE\_PLOT} at 1 sends \str{RC:PLOT}.
+\nm{PLOT\_MS} is 50\,ms.
+\nm{ENABLE\_SERIAL\_INJECT} at 1 lets you paste a line into the
+monitor after the handshake.
+\nm{SERIAL\_MAX\_LINE} cuts that line at 192 characters.
+
+\nm{DEMO\_MOTOR\_TEMP} is 90 and \nm{DEMO\_BATT\_PCT} is 76.
+They are fixed dashboard numbers until a sensor is fitted.
+They do not come from a pin.
 
 \inosnippet{47}{70}
 
-One \texttt{RC:CTRL} line fills the six controls and the switch byte.
-Until the first line arrives, sticks are 0 and both knobs are 512
-(mid-scale of 0--1023). \texttt{handshakeOk} is the gate in
-\texttt{loop()} and in \texttt{handleLine()}. \texttt{btWasConnected}
-exists only so a connect or a drop is noticed once, not on every pass
-of \texttt{loop()}.
+\nm{SerialBT} is the Classic port. \nm{handshakeOk} is the gate:
+while it is false there is no \fnm{onControl()}, no \str{RC:DATA},
+and no \str{RC:PLOT}. \nm{btWasConnected} stores the client from
+the previous pass, so a connect or a drop is noticed once.
 
-The \texttt{lastPrint*} variables belong to the Serial Monitor. They
-are not sent to the phone. A stick is printed only when its 12-bit
-image changes, so a resting stick does not flood the monitor.
+\nm{g\_lx}, \nm{g\_ly}, \nm{g\_rx}, and \nm{g\_ry} are the
+sticks, from $-100$ to 100. They start at 0. \nm{g\_ly} is the
+throttle and \nm{g\_rx} is steering. \nm{g\_lk} and
+\nm{g\_rk} are the knobs, from 0 to 1023, and they start at 512.
+\nm{g\_sw} is the switch byte. Bit 0 is the lights.
 
-\begin{center}
-\renewcommand{\arraystretch}{1.15}
-\setlength{\tabcolsep}{4pt}
-\begin{tabular}{ll>{\raggedright\arraybackslash}p{8.2cm}}
-\rowcolor{TblHead}
-\thc{Name} & \thc{Range} & \thc{Phone control} \\
-\rowcolor{TblChan}
-\texttt{g\_lx}, \texttt{g\_ly} & $-100$ \ldots\ $100$ & Left stick X, left stick Y (throttle) \\
-\rowcolor{TblChan}
-\texttt{g\_rx}, \texttt{g\_ry} & $-100$ \ldots\ $100$ & Right stick X (steering), right stick Y \\
-\rowcolor{TblChan}
-\texttt{g\_lk}, \texttt{g\_rk} & $0$ \ldots\ $1023$ & Left knob, right knob. 512 is the middle. \\
-\rowcolor{TblChan}
-\texttt{g\_sw} & 8 bits, sent as hex & Bit 0 is the lights switch. Bits 1--5 are the other switches. \\
-\end{tabular}
-\end{center}
+\nm{lastDataMs} marks the dashboard.
+\nm{lastPlotMs} marks the plot.
+Both store \fnm{millis()}.
+\nm{serialLineBuf} gathers the line pasted into the monitor.
+It exists only when injection is compiled in.
+The \nm{lastPrint*} values store the last printed image of each
+axis, knob, and switch. They start at \typ{0xFFFF} or \typ{0xFF}
+so the first sample is always printed. They are not sent to the phone.
 
-\section{CH1 to CH8}
-\label{sec:channels}
+\inosnippet{72}{84}
 
-The phone has eight plot channels and no ninth. Row 0 of the table is
-CH1, which the wire calls \texttt{v0}. Row 7 is CH8, \texttt{v7}.
-Each sample is one byte, 0--255.
+These lines are the compiler's notice that each body comes further
+down, so \fnm{setup()} and \fnm{loop()} can call them.
+\fnm{serialInjectPoll} and \fnm{handleSerialInjectLine} are
+declared only when \nm{ENABLE\_SERIAL\_INJECT} is 1. Each body is
+in the next section.
+
+\inosnippet{87}{98}
+
+\nm{ENABLE\_STEER\_SERVO} at 1 arms the servo.
+At 0 the two servo functions stay empty.
+\nm{PIN\_STEER\_SERVO} is GPIO 13.
+\nm{CH\_STEER\_SERVO} is LEDC channel 2, the one core 2.x uses.
+The \kw{\#ifndef} lets the IDE change the value before this file,
+and uses the factory value when nobody changed it.
 
 \inosnippet{100}{114}
 
-The header file defines the row and the readers. The \texttt{.ino}
-only fills the table and answers the built-in signals.
+\nm{kTelemetryChannels} has eight rows and does not accept a ninth.
+Each brace is a \nm{TelChannel}: kind, signal, pin, LEDC channel,
+\nm{dutyMin}, and \nm{dutyMax}. Row 0 is CH1 (\str{v0}) and
+row 7 is CH8 (\str{v7}).
 
-\hsnippet{17}{42}
+From the factory, rows 0 to 6 are \nm{TEL\_VEHICLE}: temperature,
+throttle, battery, steering, lights, left knob, and right knob.
+The pin and the channel are $-1$ because the signal does not come
+from a GPIO. Row 7 is the servo's \nm{TEL\_PWM}: pin
+\nm{PIN\_STEER\_SERVO}, channel \nm{CH\_STEER\_SERVO}, duty from
+204 to 409 (the 1000--2000\,\textmu s travel).
 
-\begin{center}
-\renewcommand{\arraystretch}{1.18}
-\setlength{\tabcolsep}{3pt}
-\begin{tabular}{>{\raggedright\arraybackslash}p{2.3cm}
-                >{\raggedright\arraybackslash}p{4.4cm}
-                >{\raggedright\arraybackslash}p{7.6cm}}
-\rowcolor{TblHead}
-\thc{Kind} & \thc{Fields that matter} & \thc{Byte that is sent} \\
-\rowcolor{TblTelem}
-\texttt{TEL\_VEHICLE} & \texttt{vehicle} & \texttt{telemetryVehicle()} in the \texttt{.ino}. \texttt{pin} is ignored. \\
-\rowcolor{TblTelem}
-\texttt{TEL\_ADC} & \texttt{pin} & \texttt{analogRead}, 0--4095 scaled to 0--255. Use a GPIO that can be an input, such as 34 or 35. \\
-\rowcolor{TblTelem}
-\texttt{TEL\_GPIO} & \texttt{pin} & \texttt{digitalRead}: 0 or 255. An output pin reports the level last written. \\
-\rowcolor{TblTelem}
-\texttt{TEL\_PWM} & \texttt{pin}, \texttt{ledcChannel}, \texttt{dutyMin}, \texttt{dutyMax} & LEDC duty already running on that pin. \texttt{dutyMin} becomes 0 and \texttt{dutyMax} becomes 255. \\
-\end{tabular}
-\end{center}
+\inosnippet{139}{140}
 
-Stock rows, top to bottom:
+These two constants sit just before \fnm{steerDutyFromUs()}.
+They are outside the header.
+\nm{kSteerCenterUs} is 1500\,\textmu s, the center.
+\nm{kSteerTravelUs} is 500\,\textmu s to each side of the stick.
+\nm{rx} = 0 stays at 1500\,\textmu s.
 
-\begin{center}
-\renewcommand{\arraystretch}{1.12}
-\setlength{\tabcolsep}{4pt}
-\begin{tabular}{>{\raggedright\arraybackslash}p{1.6cm}
-                >{\raggedright\arraybackslash}p{1.5cm}
-                >{\raggedright\arraybackslash}p{11.2cm}}
-\rowcolor{TblHead}
-\thc{Phone} & \thc{Wire} & \thc{Stock source} \\
-\rowcolor{TblChan}
-CH1 & \texttt{v0} & Demo temperature, constant 90 \\
-CH2 & \texttt{v1} & Throttle magnitude $|$\texttt{g\_ly}$|$. Direction is not in the byte. \\
-CH3 & \texttt{v2} & Demo battery 76\%, scaled to 0--255 \\
-CH4 & \texttt{v3} & Steering magnitude $|$\texttt{g\_rx}$|$ \\
-CH5 & \texttt{v4} & Lights, switch bit 0, as 0 or 255 \\
-CH6 & \texttt{v5} & Left knob, 0--1023 scaled to 0--255 \\
-CH7 & \texttt{v6} & Right knob, same scale \\
-CH8 & \texttt{v7} & Steering-servo PWM. Duty 204\ldots409 is the 1000--2000\,\textmu s travel. Center is about 128. \\
-\end{tabular}
-\end{center}
+\section{What each function does}
+\label{sec:funcs}
 
-\inosnippet{116}{137}
+The order follows each file, after the declarations. Under each
+signature is the whole function, in the IDE colors. The text uses the
+same coloring: orange is a function, from the sketch or from a library
+(\fnm{onControl()}, \fnm{print}, \fnm{ledcWrite}), and purple is a
+name from this project (\nm{BT\_NAME}, \nm{g\_lx},
+\nm{TEL\_TEMP}).
 
-\texttt{TEL\_RY} is implemented and unused by the stock table. To show
-the right-stick Y axis, replace a row's \texttt{vehicle} with
-\texttt{TEL\_RY}. Throttle, steer, and \texttt{TEL\_RY} are magnitudes:
-full left and full right are the same byte. A signed axis needs a
-center of 128, for example
-\code{map(g\_ly, -100, 100, 0, 255)}, written in
-\texttt{telemetryVehicle()} for that one signal.
+\nm{DBG\_PRINT}, \nm{DBG\_PRINTLN}, and \nm{DBG\_PRINTF} are
+macros. With \nm{ENABLE\_DEBUG} at 1 they write to the serial
+monitor. At 0 the compiler removes them.
 
-A real battery on GPIO 34 replaces the CH3 row. The vehicle name on an
-ADC row is ignored:
+\subsection{In \texttt{TeleCon\_Classic\_Simple.ino}}
 
-\begin{quote}
-\texttt{\{ TEL\_ADC, TEL\_BATT, 34, -1, 0, 1 \},}
-\end{quote}
+\begin{fnblock}
+\fn{\typ{uint8\_t} \fnm{telemetryVehicle}(\nm{TelVehicle} \nm{id})}{116}{137}
+Line 116. Returns the byte 0--255 of a built-in signal, the one a
+\nm{TEL\_VEHICLE} row asks for. \nm{TEL\_TEMP} is the constant
+\nm{DEMO\_MOTOR\_TEMP}. \nm{TEL\_THROTTLE} is the magnitude of
+\nm{g\_ly}. \nm{TEL\_BATT} scales \nm{DEMO\_BATT\_PCT} from
+0--100 to 0--255. \nm{TEL\_STEER} is the magnitude of \nm{g\_rx}.
+\nm{TEL\_LIGHTS} is 255 when bit 0 of \nm{g\_sw} is set, and 0
+when it is clear. \nm{TEL\_KNOB\_L} and \nm{TEL\_KNOB\_R} map
+the knob from 0--1023 to 0--255. \nm{TEL\_RY} is the magnitude of
+\nm{g\_ry}. Any other \nm{id} returns 0. Throttle, steering, and
+\nm{TEL\_RY} drop the sign: both ends of the stick produce the
+same byte.
 
-An 8-bit motor PWM on GPIO 25, LEDC channel 0, is:
+\end{fnblock}
 
-\begin{quote}
-\texttt{\{ TEL\_PWM, TEL\_THROTTLE, 25, 0, 0, 255 \},}
-\end{quote}
+\begin{fnblock}
+\fnstep{142}{145}{\typ{uint32\_t} \fnm{steerDutyFromUs}(\typ{int} \nm{us})}{%
+Line 142. Turns a pulse width, in microseconds, into a 12-bit LEDC
+duty: pulse $\times 4095 / 20000$. It first limits the pulse to
+500--2500\,\textmu s. 1500\,\textmu s lands at the center of a 20\,ms
+frame.}
 
-The pin must already be attached with \texttt{ledcAttach} (Arduino-ESP32
-3.x) or \texttt{ledcSetup} plus \texttt{ledcAttachPin} (2.x) before the
-plot reads it. The reader itself is in the header and is the same for
-every row.
+\end{fnblock}
 
-\hsnippet{46}{75}
+\begin{fnblock}
+\fnstep{147}{151}{\typ{uint32\_t} \fnm{steerDutyFromRx}(\typ{int} \nm{rx})}{%
+Line 147. Limits \nm{rx} to $-100\ldots 100$, turns it into
+microseconds (0 is 1500\,\textmu s, full travel is $\pm 500$\,\textmu s),
+and calls \fnm{steerDutyFromUs}. The phone trim is already inside
+\nm{rx}.}
 
-On core 3.x, \texttt{ledcRead} takes the GPIO number. On 2.x it takes
-the channel number. That is why a PWM row stores both \texttt{pin} and
-\texttt{ledcChannel}.
+\end{fnblock}
 
-Changing a row does not add packets. The plot line is still eight
-numbers every 50\,ms, about 80 bytes, about 1.6\,kB/s. The phone channel
-menus bind CH1--CH8. There is nowhere to put a CH9.
+\begin{fnblock}
+\fntwo{\typ{void} \fnm{steerServoBegin}()}{153}{163}{174}{174}
+Line 154, or line 174 when \nm{ENABLE\_STEER\_SERVO} is 0.
+With the servo on, it sets a 50\,Hz, 12-bit PWM on
+\nm{PIN\_STEER\_SERVO} and writes the center. On core 3.x the
+channel is attached by pin number (\fnm{ledcAttach},
+\fnm{ledcWrite}). On 2.x it uses \nm{CH\_STEER\_SERVO}
+(\fnm{ledcSetup}, \fnm{ledcAttachPin}, \fnm{ledcWrite}).
+With the switch at 0 the function does nothing.
 
-\section{Steering servo}
+\end{fnblock}
 
-\inosnippet{87}{176}
+\begin{fnblock}
+\fntwo{\typ{void} \fnm{steerServoWriteRx}(\typ{int} \nm{rx})}{165}{172}{175}{175}
+Line 165, or line 175 when the servo is off. It computes the duty
+for \nm{rx} and writes it. The empty version only discards
+\nm{rx}, so the compiler stays quiet about an unused parameter.
+\fnm{applyFailSafe()} calls it with 0, which is the center.
 
-The servo is on by default, GPIO 13, LEDC channel 2, 50\,Hz, 12-bit
-duty. \texttt{rx = 0} is 1500\,\textmu s. Full stick is $\pm 500$\,\textmu s,
-so the pulse runs from 1000\,\textmu s to 2000\,\textmu s. The duty is
-$\mathrm{pulse} \times 4095 / 20000$, because a 20\,ms frame at 12 bits
-is 4096 steps.
+\end{fnblock}
 
-\begin{center}
-\begin{tikzpicture}[x=1.15cm,y=0.55cm]
-  \draw[TblHead, thick] (0,0) -- (10,0);
-  \foreach \x/\lab in {0/$-100$,5/$0$,10/$+100$}{
-    \draw[TblHead, thick] (\x,-0.12) -- (\x,0.12);
-    \node[below, font=\sffamily\small] at (\x,-0.15) {\texttt{rx} \lab};
-  }
-  \node[above, font=\sffamily\small, align=center] at (0,0.2) {1000\,\textmu s};
-  \node[above, font=\sffamily\small, align=center] at (5,0.2) {1500\,\textmu s\\center};
-  \node[above, font=\sffamily\small, align=center] at (10,0.2) {2000\,\textmu s};
-\end{tikzpicture}
-\end{center}
+\begin{fnblock}
+\fn{\typ{void} \fnm{onControl}(\typ{int} \nm{lx}, \typ{int} \nm{ly}, \typ{int} \nm{rx}, \typ{int} \nm{ry}, \typ{int} \nm{lk}, \typ{int} \nm{rk}, \typ{uint8\_t} \nm{sw})}{178}{187}
+Line 178. Runs once for each \str{RC:CTRL} line. It prints the
+change on the monitor, moves the servo with \nm{rx}, and leaves the
+\cmt{YOUR CODE HERE} block for whatever should follow the stick: motor
+PWM, a pan servo from \nm{rk}, a lights pin from
+\nm{sw} \& 0x01. The \texttt{(}\typ{void}\texttt{)} casts silence the
+warning for values the starter sketch does not use yet. Remove the
+cast of a value when you start using it.
 
-Phone trim already moves \texttt{rx} before this function sees it.
-\texttt{steerServoWriteRx(0)} in the fail-safe is center, not ``whatever
-trim was last''.
+\end{fnblock}
 
-To move the servo to another pin, change \texttt{PIN\_STEER\_SERVO}.
-Keep \texttt{CH\_STEER\_SERVO} off the channels you later use for motor
-PWM (the binary sketches use 0 and 1 for the two drive motors, 2 for
-steer, 3 for pan). To build a board with no servo, set
-\texttt{ENABLE\_STEER\_SERVO} to 0. The two functions become empty, and
-CH8 will read 0 because no PWM is attached.
+\begin{fnblock}
+\fn{\typ{void} \fnm{onButton}(\typ{int} \nm{id})}{189}{198}
+Line 189. Runs once for each \str{RC:BTN}. It prints the id. The
+factory comment leaves id 2 for a short horn pulse and id 4 for
+centering a pan servo. Those two bodies are empty. A button that must
+stay down belongs as a bit of \nm{sw} inside \fnm{onControl()},
+because \str{RC:BTN} is the press, and the held level travels in
+\str{RC:CTRL}.
 
-Core 3.x writes the LEDC channel by pin number. Core 2.x writes it by
-channel number. Both branches are in \texttt{steerServoBegin()} and
-\texttt{steerServoWriteRx()}.
+\end{fnblock}
 
-\section{Your actuators}
-\label{sec:yourcode}
+\begin{fnblock}
+\fn{\typ{void} \fnm{setup}()}{200}{242}
+Line 200. Starts serial at 115200, waits 200\,ms, centers the servo,
+turns Secure Simple Pairing off, sets the PIN \str{1234}, and opens
+Bluetooth Classic with \nm{BT\_NAME}, as a slave and without BLE. If
+\nm{SerialBT}\texttt{.}\fnm{begin} fails, it prints the failure and
+stays in \kw{while} (\typ{true}). The banner after that is debug only:
+the name, the handshake, and sample lines for the monitor.
 
-\inosnippet{178}{198}
+\end{fnblock}
 
-\texttt{onControl()} runs once per \texttt{RC:CTRL} line, which the
-phone sends many times a second while a stick is held. Put continuous
-outputs here: motor PWM, a pan servo from \texttt{rk}, a lights pin from
-\texttt{sw \& 0x01}. The steering call above the comment is already
-done. The \texttt{(void)} casts only silence unused-parameter warnings;
-delete a cast when you start using that value.
+\begin{fnblock}
+\fn{\typ{void} \fnm{loop}()}{244}{302}
+Line 244. Arduino calls \fnm{loop()} again and again, from the moment
+\fnm{setup()} finishes. Each pass follows these steps, and the next
+one starts when the previous one has finished.
 
-\texttt{onButton()} runs once per press. The phone button id is the
-argument. The stock comments reserve id 2 for a short horn pulse and
-id 4 for centering a pan servo. Those bodies are empty on purpose.
-A button that must stay down for the whole hold is a better fit as a
-switch bit in \texttt{onControl()}, because \texttt{RC:BTN} is an edge,
-not a level.
+\fnstep{245}{256}{1. Bluetooth client}{%
+  Reads \nm{SerialBT}\texttt{.}\fnm{hasClient()} and compares it with
+  \nm{btWasConnected}. If it changed, it stores the new state.
+  If the phone just arrived, it calls \fnm{resetHandshake()}:
+  \nm{handshakeOk} stays false, and the monitor says it is waiting
+  for \str{RC:CONNECT,proto,simple}.
+  If the phone just left, it calls \fnm{applyFailSafe()}
+  (sticks at 0, knobs at 512, switches at 0, servo at center) and
+  then \fnm{resetHandshake()}.
+  If the client is unchanged, this block calls nobody.}
+\fnstep{258}{264}{2. Bluetooth lines}{%
+  While \nm{SerialBT} has bytes, it reads up to
+  \str{\textbackslash n}, strips spaces with \fnm{trim()}, and, if
+  text remains, calls \fnm{handleLine()}.
+  A valid \str{RC:CONNECT,proto,simple} line in this same pass sets
+  \nm{handshakeOk} true before the timers below.}
+\fnstep{266}{268}{3. Serial monitor}{%
+  With \nm{ENABLE\_SERIAL\_INJECT} at 1, it calls
+  \fnm{serialInjectPoll()}.
+  A monitor line that starts with \str{RC:DATA} or with
+  \str{RC:PLOT} goes out to the phone at that moment.
+  With the switch at 0, this block is left out of the binary.}
+\fnstep{270}{270}{4. Handshake gate}{%
+  If \nm{handshakeOk} is false, \fnm{loop()} ends at that
+  \kw{return}.
+  The dashboard and the plot wait for the answer from
+  \fnm{handleConnect()}: \str{RC:ACK,app,RC}.}
+\fnstep{272}{272}{5. Clock}{%
+  Stores \fnm{millis()} in \nm{now}.
+  The dashboard and the plot use this same instant, each with its
+  own mark. Meeting one deadline does not restart the other.
+  Both can come due on the same pass: the dashboard first, then
+  the plot.}
+\fnstep{274}{286}{6. Dashboard, every \nm{TELEMETRY\_DATA\_MS} (500\,ms)}{%
+  When \nm{now} $-$ \nm{lastDataMs} reaches the period, it stores
+  \nm{now} in \nm{lastDataMs} and builds an \str{RC:DATA} line.
+  \str{left} is \fnm{abs}(\nm{g\_ly}) * 25 / 10: throttle 100
+  goes out as 250, and the phone reads it as speed $\times 10$.
+  \fnm{abs()} sends the magnitude, so full reverse throttle also
+  goes out as 250.
+  \str{right} stays fixed at 0.
+  \str{lo,1,ro,0,lg,1,rg,0} are the panel lamps, also fixed.
+  \str{analog} copies \nm{DEMO\_MOTOR\_TEMP} (90) and \str{batt}
+  copies \nm{DEMO\_BATT\_PCT} (76).
+  \str{led} is \nm{g\_sw} in two hexadecimal digits.
+  \fnm{sendLine()} sends that line.}
+\fnstep{288}{301}{7. Plot, every \nm{PLOT\_MS} (50\,ms)}{%
+  This block enters the binary when \nm{ENABLE\_PLOT} is 1.
+  When \nm{now} $-$ \nm{lastPlotMs} reaches the period, it stores
+  \nm{now} in \nm{lastPlotMs}, calls \fnm{telemetryReadAll()} with
+  \nm{kTelemetryChannels} and \fnm{telemetryVehicle}, and sends
+  \str{RC:PLOT} from \str{v0} to \str{v7}, in the order of the eight
+  rows.
+  With \nm{ENABLE\_PLOT} at 0, this block is left out of the binary.}
 
-\inosnippet{409}{416}
+\end{fnblock}
 
-On disconnect, sticks, knobs, and switches return to the same defaults
-as boot, and the servo is written to center. Motor PWM you started in
-\texttt{onControl()} is \emph{not} cleared unless you stop it under the
-second \texttt{YOUR CODE HERE}. A driver left at the last throttle will
-keep running after the phone is gone.
+\begin{fnblock}
+\fn{\typ{void} \fnm{handleSerialInjectLine}(\typ{const} \typ{String}\& \nm{line})}{304}{324}
+Line 305. The factory sketch compiles it, because
+\nm{ENABLE\_SERIAL\_INJECT} is 1. If there is no Bluetooth client,
+or the handshake is not ready yet, it does not send the line. If the
+line starts with \str{RC:DATA} or with \str{RC:PLOT}, it sends it
+once with \fnm{sendLine}. Any other line is only noted on the
+monitor. The \fnm{loop()} timers keep running, so the next automatic
+packet replaces that line on the phone.
 
-\section{setup}
+\end{fnblock}
 
-\inosnippet{200}{242}
+\begin{fnblock}
+\fn{\typ{void} \fnm{serialInjectPoll}()}{326}{347}
+Line 326. Reads the monitor one character at a time up to
+\str{\textbackslash n}. It ignores \str{\textbackslash r}, so a line
+ending of ``Both NL \& CR'' works. When the line closes it trims it
+and, if text remains, calls \fnm{handleSerialInjectLine}. If the
+buffer passes \nm{SERIAL\_MAX\_LINE} (192), it throws the buffer
+away and says so.
 
-Order matters. Serial starts first so a Bluetooth failure can be
-printed. The servo is centered before the radio comes up, so a link
-that never connects still leaves the wheel straight.
-\texttt{disableSSP()} plus \texttt{setPin(..., 4)} is legacy PIN
-pairing. Mixing that with Secure Simple Pairing is a known way to make
-Android fail the bond, which is why SSP is turned off.
-\texttt{SerialBT.begin(name, false, true)} means ``not the master'' and
-``Classic only, BLE off''. If \texttt{begin} fails, the sketch stops in
-\texttt{while (true)}.
+\end{fnblock}
 
-The banner is entirely debug. It does not change the protocol. It
-prints the lines you can paste into the Serial Monitor when inject is
-on.
+\begin{fnblock}
+\fnstep{349}{351}{\typ{uint16\_t} \fnm{stickTo12}(\typ{int} \nm{s})}{%
+Line 349. Maps a stick from $-100\ldots 100$ to $0\ldots 4095$, only
+for the monitor text. Stick 0 lands near 2048. That number is neither
+the servo duty nor the \str{RC:PLOT} byte.}
 
-\section{loop}
+\end{fnblock}
 
-\inosnippet{244}{302}
+\begin{fnblock}
+\fn{\typ{void} \fnm{debugPrintControl}(\typ{int} \nm{lx}, \typ{int} \nm{ly}, \typ{int} \nm{rx}, \typ{int} \nm{ry}, \typ{int} \nm{lk}, \typ{int} \nm{rk}, \typ{uint8\_t} \nm{sw})}{353}{398}
+Line 353. Runs each stick through \fnm{stickTo12} and each knob
+through a 0--1023 limit. It prints an axis only when that value
+changed from \nm{lastPrint*}, so a still stick does not fill the
+monitor. If one of the first six bits of \nm{sw} changes, it prints
+\str{SW1} through \str{SW6}. With \nm{ENABLE\_DEBUG} at 0 the
+function still runs and the macros write nothing.
 
-Each pass does four things, in this order.
+\end{fnblock}
 
-\begin{enumerate}[leftmargin=1.3cm]
-  \item Watch the Classic client. A new client clears the handshake so
-        an old session cannot stay ``ready'' across a reconnect. A drop
-        calls \texttt{applyFailSafe()}.
-  \item Read every complete line from Bluetooth and hand it to
-        \texttt{handleLine()}. The delimiter is \texttt{\textbackslash n}.
-        A line with no characters after \texttt{trim} is ignored.
-  \item If inject is compiled in, take one newline-terminated line from
-        the Serial Monitor.
-  \item If the handshake is still open, return. No \texttt{RC:DATA} and
-        no \texttt{RC:PLOT} until \texttt{RC:ACK} has been sent.
-\end{enumerate}
+\begin{fnblock}
+\fnstep{400}{402}{\typ{void} \fnm{debugPrintButton}(\typ{int} \nm{id})}{%
+Line 400. Prints \str{BTNn : Pressed} with the id that arrived in
+\str{RC:BTN}.}
 
-After the gate, two timers run from \texttt{millis()}. They do not
-reset each other.
+\end{fnblock}
 
-\texttt{RC:DATA} every 500\,ms is the vehicle HUD, not the eight plot
-channels. \texttt{left} is $|$\texttt{g\_ly}$| \times 2.5$, sent as an
-integer (\texttt{abs(g\_ly) * 25 / 10}): full throttle 100 becomes 250,
-which the phone treats as speed $\times 10$. \texttt{right} is always
-0 in this starter. \texttt{lo,1,ro,0,lg,1,rg,0} are fixed panel lamps.
-\texttt{analog} is the demo temperature, \texttt{batt} the demo
-percentage, \texttt{led} the switch byte in two hex digits. Replace
-\texttt{analog} and \texttt{batt} in this \texttt{snprintf} when the
-HUD should follow the same sensor as CH1 or CH3. The plot table does
-not fill this line by itself.
+\begin{fnblock}
+\fnstep{404}{407}{\typ{void} \fnm{sendLine}(\typ{const} \typ{String}\& \nm{line})}{%
+Line 404. The only send toward the phone. It writes the text and
+then a newline, through \nm{SerialBT}. The handshake, the NAK, the
+dashboard, and the plot all pass through here.}
 
-\texttt{RC:PLOT} every 50\,ms calls \texttt{telemetryReadAll}, which
-walks the eight rows. The line is always
-\texttt{v0} through \texttt{v7}, in that order.
+\end{fnblock}
 
-\section{Handshake and the text parser}
-\label{sec:parser}
+\begin{fnblock}
+\fnstep{409}{416}{\typ{void} \fnm{applyFailSafe}()}{%
+Line 409. Sets the four sticks to 0, the two knobs to 512, and
+\nm{g\_sw} to 0, and writes the servo with \nm{rx} 0 (center).
+Under the second \cmt{YOUR CODE HERE}, stop the motors that
+\fnm{onControl()} started. Otherwise the last throttle stays applied
+after the phone is gone.}
 
-\inosnippet{425}{508}
+\end{fnblock}
 
-\texttt{getValue()} understands one shape:
-\texttt{RC:TYPE,key,value,key,value}. It skips the
-\texttt{APP:TYPE} head, then walks pairs. The value runs to the next
-comma, or to the end of the line for the last pair. Keys are case
-sensitive (\texttt{lx}, not \texttt{LX}). A missing key returns an
-empty string, and \texttt{toInt()} of that string is 0, so a broken
-\texttt{RC:CTRL} looks like centered sticks.
+\begin{fnblock}
+\fnstep{418}{423}{\typ{void} \fnm{resetHandshake}()}{%
+Line 418. Sets \nm{handshakeOk} to false and forgets the last
+monitor values, so the new session prints them again. It does not
+move the servo or the outputs: the code that saw the drop already
+called \fnm{applyFailSafe()}.}
 
-\texttt{handleConnect()} checks two things. The app name before the
-colon must be \texttt{RC}. The \texttt{proto} value must be
-\texttt{simple}. Anything else is \texttt{RC:NAK} with
-\texttt{app\_mismatch} or \texttt{proto\_mismatch}, and
-\texttt{handshakeOk} stays false. Success is exactly
-\texttt{RC:ACK,app,RC}.
+\end{fnblock}
 
-\texttt{handleLine()} ignores a line with no colon. \texttt{CONNECT}
-is accepted before the session is ready; every other type is dropped
-until then. After the ACK, only an \texttt{RC} app is accepted.
-\texttt{CTRL} stores the seven fields and calls \texttt{onControl()}.
-\texttt{BTN} reads \texttt{id} and calls \texttt{onButton()}. Any other
-type (\texttt{DATA}, \texttt{PLOT}, \texttt{SET}) is ignored on the
-way in. This sketch sends \texttt{DATA} and \texttt{PLOT}; it does not
-obey them.
+\begin{fnblock}
+\fn{\typ{String} \fnm{getValue}(\typ{const} \typ{String}\& \nm{line}, \typ{const} \typ{char}* \nm{key})}{425}{447}
+Line 425. Pulls the value of a key from a line
+\str{APP:TYPE,key,value,key,value}. It skips the head up to the
+first comma and walks the pairs. The value runs to the next comma,
+or to the end of the line on the last pair. Keys are case-sensitive
+(\nm{lx}, which is distinct from \str{LX}). A missing key returns
+an empty string, and \fnm{toInt()} of that string is 0.
 
-\begin{center}
-\begin{tikzpicture}[node distance=3mm]
-  \node[flow, text width=3.3cm] (line) {one Bluetooth line};
-  \node[flow, right=8mm of line, text width=3.3cm] (type) {type after the colon};
-  \node[leave, right=8mm of type, text width=3.4cm] (drop) {ignore until ACK};
-  \node[edit, below=8mm of type, text width=3.6cm] (ctrl) {\texttt{CTRL}\\\texttt{onControl()}};
-  \node[edit, below=of ctrl, text width=3.6cm] (btn) {\texttt{BTN}\\\texttt{onButton()}};
-  \node[flow, above=8mm of type, text width=3.6cm] (con) {\texttt{CONNECT}\\ACK or NAK};
-  \draw[arr] (line) -- (type);
-  \draw[arr] (type) -- (con);
-  \draw[arr] (type) -- (ctrl);
-  \draw[arr] (ctrl) -- (btn);
-  \draw[arr] (type) -- (drop);
-\end{tikzpicture}
-\end{center}
+\end{fnblock}
 
-\section{Serial inject and the monitor}
+\begin{fnblock}
+\fn{\typ{void} \fnm{handleConnect}(\typ{const} \typ{String}\& \nm{app}, \typ{const} \typ{String}\& \nm{line})}{449}{475}
+Line 449. Requires two things, ignoring case. The name before the
+colon has to be \nm{APP\_PREFIX} (\str{RC}). The \str{proto}
+value has to be \nm{PROTO\_WIRE} (\str{simple}). If the name does
+not match, it answers \str{RC:NAK} with \str{app\_mismatch} and
+leaves \nm{handshakeOk} false. If \str{proto} is missing, or
+carries another value, it answers \str{proto\_mismatch}. If both
+match, it sends exactly \str{RC:ACK,app,RC} and sets
+\nm{handshakeOk} true.
 
-\inosnippet{304}{347}
+\end{fnblock}
 
-Inject is a bench tool. It does not run when Bluetooth has no client,
-and it does not run before the handshake. Only a line that starts with
-\texttt{RC:DATA} or \texttt{RC:PLOT} is written to the phone, once.
-The 500\,ms and 50\,ms timers are not stopped, so the following
-automatic line overwrites that inject on the phone. A line longer than
-192 characters is thrown away. \texttt{\textbackslash r} is stripped so
-a monitor set to ``Both NL \& CR'' still works; the sketch commits on
-\texttt{\textbackslash n}.
+\begin{fnblock}
+\fn{\typ{void} \fnm{handleLine}(\typ{const} \typ{String}\& \nm{line})}{477}{508}
+Line 477. If the line has no colon, it returns. It splits the app
+and the type (the text up to the first comma). \str{CONNECT} calls
+\fnm{handleConnect} even when the handshake is not ready yet. Any
+other type is ignored while \nm{handshakeOk} is false, and also
+when the app is not \str{RC}. \str{CTRL} stores \nm{lx},
+\nm{ly}, \nm{rx}, \nm{ry}, \nm{lk}, \nm{rk}, and
+\nm{sw} (the \nm{sw} field is read in hexadecimal) and calls
+\fnm{onControl}. \str{BTN} calls \fnm{onButton} with the
+\nm{id}. A \str{DATA}, \str{PLOT}, or \str{SET} line that arrives
+from the phone does nothing: this sketch sends those lines, and it
+does not obey them.
 
-\inosnippet{349}{402}
+\end{fnblock}
 
-\texttt{stickTo12()} maps $-100\ldots100$ onto $0\ldots4095$ for the
-monitor only. 0 on the stick is about 2048 on this scale. That number
-is not the servo duty and not the plot byte. \texttt{debugPrintControl()}
-prints a stick when that axis changes.
-It prints \texttt{SW1}--\texttt{SW6} when a bit flips. \texttt{debugPrintButton()} prints the
-id. With \texttt{ENABLE\_DEBUG} at 0 these functions still run, but the
-macros produce no output.
+\subsection{In \texttt{TelemetryChannels.h}}
 
-\texttt{sendLine()} is the only writer to the phone.
-It prints the text and then a newline.
+The file declares the types the three functions use.
+\nm{TelKind} is the source of the row: vehicle, ADC, GPIO, or PWM.
+\nm{TelVehicle} is the built-in signal (\nm{TEL\_TEMP},
+\nm{TEL\_THROTTLE}, \nm{TEL\_BATT}, \nm{TEL\_STEER},
+\nm{TEL\_LIGHTS}, \nm{TEL\_KNOB\_L}, \nm{TEL\_KNOB\_R},
+\nm{TEL\_RY}). \nm{TelChannel} stores the kind, the signal, the
+pin, the LEDC channel, and the duty range. \nm{TelVehicleFn} is
+the pointer to \fnm{telemetryVehicle()}.
 
-\texttt{resetHandshake()} does not move the servo.
-The caller that detected the drop already called \texttt{applyFailSafe()}.
+\begin{fnblock}
+\fnh{\typ{uint8\_t} \fnm{telemetryReadPwm}(\typ{const} \nm{TelChannel}\& \nm{ch})}{46}{56}
+Line 46. If \nm{dutyMax} is not greater than \nm{dutyMin},
+it returns 0. It reads the duty that is already running: on core 3.x
+with \fnm{ledcRead} of the pin number, on 2.x with \fnm{ledcRead}
+of the channel number. It clips that duty to
+\nm{dutyMin}\ldots\nm{dutyMax} and scales it to 0--255. The
+factory servo row uses 204\ldots409, which is the
+1000--2000\,\textmu s travel; the center comes out near 128. The pin
+has to be attached in \fnm{setup} before this function reads it.
 
-\inosnippet{404}{423}
+\end{fnblock}
 
-\section{A short checklist before you flash}
+\begin{fnblock}
+\fnh{\typ{uint8\_t} \fnm{telemetryReadOne}(\typ{const} \nm{TelChannel}\& \nm{ch}, \nm{TelVehicleFn} \nm{vehicle})}{58}{71}
+Line 58. One byte, according to \nm{ch}\texttt{.}\nm{kind}.
+\nm{TEL\_ADC} reads the pin and scales 0--4095 to 0--255; a negative
+pin returns 0. \nm{TEL\_GPIO} returns 255 or 0 from
+\fnm{digitalRead}; an output pin reports the level that was written.
+\nm{TEL\_PWM} calls \fnm{telemetryReadPwm}. Any other kind calls
+\fnm{vehicle}(\nm{ch}\texttt{.}\nm{vehicle}). If that pointer is
+null, it returns 0.
 
-\begin{enumerate}[leftmargin=1.3cm]
-  \item Board is an ESP32 Dev Module, not an ESP32-CAM.
-  \item Phone connection is Classic + Simple, name
-        \texttt{ESP32-TC-RC-BT-Simple}.
-  \item Motor code is in \texttt{onControl()}, and the same outputs are
-        stopped in \texttt{applyFailSafe()}.
-  \item \texttt{kTelemetryChannels[]} still has eight rows.
-  \item A \texttt{TEL\_PWM} row uses a pin that \texttt{setup} (or your
-        code) has already attached.
-  \item Servo signal is GPIO 13, or you changed \texttt{PIN\_STEER\_SERVO}
-        and the wire together.
-  \item After the link works, set the three \texttt{ENABLE\_*} switches
-        you no longer need, and upload again.
-\end{enumerate}
+\end{fnblock}
+
+\begin{fnblock}
+\fnhstep{73}{75}{\typ{void} \fnm{telemetryReadAll}()}{%
+Line 73. Walks the eight rows of \nm{kTelemetryChannels[]} and
+writes \nm{out[0]} through \nm{out[7]}. \fnm{loop()} sends those
+bytes as \str{v0} through \str{v7}. Row 0 is the phone's CH1 and
+row 7 is CH8. This function has eight slots.}
+
+
+\end{fnblock}
 
 \appendix
-\section{Full \texttt{TeleCon\_Classic\_Simple.ino}}
+\renewcommand{\thesection}{Annex~\Alph{section}}
+\section{\texttt{TeleCon\_Classic\_Simple.ino}}
+\label{sec:ino-full}
 
-The listing is the file Arduino compiles. Line numbers match the
-sections above.
+This is the whole sketch, the file the IDE opens. The line numbers
+are the file's line numbers.
 
-\VerbatimInput[numbers=left,fontsize=\scriptsize,xleftmargin=2.2em]{\sketchfile}
+\lstinputlisting[basicstyle=\ttfamily\footnotesize,%
+  numberstyle=\scriptsize\color{ArduinoLineNo}]{\sketchfile}
 
-\section{Full \texttt{TelemetryChannels.h}}
+\section{\texttt{TelemetryChannels.h}}
+\label{sec:h-full}
 
-\VerbatimInput[numbers=left,fontsize=\scriptsize,xleftmargin=2.2em]{\channelfile}
+The header stands on its own. The \texttt{.ino} includes it and does
+not copy it.
+
+\lstinputlisting[basicstyle=\ttfamily\footnotesize,%
+  numberstyle=\scriptsize\color{ArduinoLineNo}]{\channelfile}
 
 \end{document}
