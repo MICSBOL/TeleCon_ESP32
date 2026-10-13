@@ -11,7 +11,7 @@
  */
 
 #include "BluetoothSerial.h"
-#include "SteerCenter.h"
+#include "TelemetryChannels.h"
 
 // === CONFIG ===
 #define BT_NAME             "ESP32-TC-RC-BT-Simple"
@@ -84,9 +84,9 @@ void handleSerialInjectLine(const String& line);
 #endif
 
 
-// === STEER CENTER (NVS) ===
+// === STEERING SERVO ===
 // DevKit: set ENABLE_STEER_SERVO 1 and wire a servo on PIN_STEER_SERVO.
-// After Android Tune → ◀/▶ → Check, rx=0 holds that mechanical straight (NVS).
+// rx = 0 is always 1500 µs. Phone trim already offsets rx before it is sent.
 #ifndef ENABLE_STEER_SERVO
 #define ENABLE_STEER_SERVO 1
 #endif
@@ -97,29 +97,73 @@ void handleSerialInjectLine(const String& line);
 #define CH_STEER_SERVO 2
 #endif
 
+// Phone CH1…CH8. Change a row to TEL_ADC, TEL_GPIO, or TEL_PWM and set the pin.
+// Examples:
+//   { TEL_ADC,  TEL_TEMP,  34, -1, 0, 1 },             // analog pin 34
+//   { TEL_GPIO, TEL_LIGHTS, 15, -1, 0, 1 },            // digital pin 15
+//   { TEL_PWM,  TEL_THROTTLE, 25, 0, 0, 255 },         // 8-bit motor PWM on GPIO 25
+static const TelChannel kTelemetryChannels[8] = {
+  { TEL_VEHICLE, TEL_TEMP,     -1,              -1,   0,   1 },
+  { TEL_VEHICLE, TEL_THROTTLE, -1,              -1,   0,   1 },
+  { TEL_VEHICLE, TEL_BATT,     -1,              -1,   0,   1 },
+  { TEL_VEHICLE, TEL_STEER,    -1,              -1,   0,   1 },
+  { TEL_VEHICLE, TEL_LIGHTS,   -1,              -1,   0,   1 },
+  { TEL_VEHICLE, TEL_KNOB_L,   -1,              -1,   0,   1 },
+  { TEL_VEHICLE, TEL_KNOB_R,   -1,              -1,   0,   1 },
+  { TEL_PWM,     TEL_STEER,    PIN_STEER_SERVO, CH_STEER_SERVO, 204, 409 },
+};
+
+uint8_t telemetryVehicle(TelVehicle id) {
+  switch (id) {
+    case TEL_TEMP:
+      return (uint8_t)DEMO_MOTOR_TEMP;
+    case TEL_THROTTLE:
+      return (uint8_t)constrain(map(abs(g_ly), 0, 100, 0, 255), 0, 255);
+    case TEL_BATT:
+      return (uint8_t)constrain(map(DEMO_BATT_PCT, 0, 100, 0, 255), 0, 255);
+    case TEL_STEER:
+      return (uint8_t)constrain(map(abs(g_rx), 0, 100, 0, 255), 0, 255);
+    case TEL_LIGHTS:
+      return (g_sw & 0x01) ? 255 : 0;
+    case TEL_KNOB_L:
+      return (uint8_t)map(constrain(g_lk, 0, 1023), 0, 1023, 0, 255);
+    case TEL_KNOB_R:
+      return (uint8_t)map(constrain(g_rk, 0, 1023), 0, 1023, 0, 255);
+    case TEL_RY:
+      return (uint8_t)constrain(map(abs(g_ry), 0, 100, 0, 255), 0, 255);
+    default:
+      return 0;
+  }
+}
+
+constexpr int kSteerCenterUs = 1500;
+constexpr int kSteerTravelUs = 500;
+
+uint32_t steerDutyFromUs(int us) {
+  int pulse = constrain(us, 500, 2500);
+  return (uint32_t)((long)pulse * 4095L / 20000L);
+}
+
+uint32_t steerDutyFromRx(int rx) {
+  int s = constrain(rx, -100, 100);
+  int us = (int)map(s, -100, 100, kSteerCenterUs - kSteerTravelUs, kSteerCenterUs + kSteerTravelUs);
+  return steerDutyFromUs(us);
+}
+
 #if ENABLE_STEER_SERVO
 void steerServoBegin() {
 #if ESP_ARDUINO_VERSION_MAJOR >= 3
   ledcAttach(PIN_STEER_SERVO, 50, 12);
-  ledcWrite(PIN_STEER_SERVO, steerCenterDuty12FromUs(steerCenterGetUs()));
+  ledcWrite(PIN_STEER_SERVO, steerDutyFromUs(kSteerCenterUs));
 #else
   ledcSetup(CH_STEER_SERVO, 50, 12);
   ledcAttachPin(PIN_STEER_SERVO, CH_STEER_SERVO);
-  ledcWrite(CH_STEER_SERVO, steerCenterDuty12FromUs(steerCenterGetUs()));
+  ledcWrite(CH_STEER_SERVO, steerDutyFromUs(kSteerCenterUs));
 #endif
 }
 
 void steerServoWriteRx(int rx) {
-  uint32_t duty = steerCenterDuty12FromRx(rx);
-#if ESP_ARDUINO_VERSION_MAJOR >= 3
-  ledcWrite(PIN_STEER_SERVO, duty);
-#else
-  ledcWrite(CH_STEER_SERVO, duty);
-#endif
-}
-
-void steerServoHoldCenter() {
-  uint32_t duty = steerCenterDuty12FromUs(steerCenterGetUs());
+  uint32_t duty = steerDutyFromRx(rx);
 #if ESP_ARDUINO_VERSION_MAJOR >= 3
   ledcWrite(PIN_STEER_SERVO, duty);
 #else
@@ -128,16 +172,14 @@ void steerServoHoldCenter() {
 }
 #else
 void steerServoBegin() {}
-void steerServoWriteRx(int rx) { steerCenterNoteApplied(rx); }
-void steerServoHoldCenter() {}
+void steerServoWriteRx(int rx) { (void)rx; }
 #endif
 
 void onControl(int lx, int ly, int rx, int ry, int lk, int rk, uint8_t sw) {
   debugPrintControl(lx, ly, rx, ry, lk, rk, sw);
 
-  // Steering map uses NVS center — trim ticks move the servo in tiny steps.
+  // rx = 0 → 1500 µs. Trim ticks on the phone already shift this value.
   steerServoWriteRx(rx);
-  // Optional differential mix: int bias = steerCenterMapBias(rx);
 
   // YOUR CODE HERE — drive motors / other actuators from sticks & knobs
   //   ly = throttle (-100..100), rx = steering, rk = pan, sw bit0 = lights
@@ -152,10 +194,6 @@ void onButton(int id) {
     // Horn note — pulse buzzer briefly
   } else if (id == 4) {
     // Center pan note — move camera pan servo to center
-  } else if (id == STEER_CENTER_BTN_ID) {
-    steerCenterSaveFromCurrentRx(g_rx);
-    steerServoHoldCenter();
-    sendLine("RC:ACK,steer_center,1");
   }
 }
 
@@ -163,7 +201,6 @@ void setup() {
   Serial.begin(SERIAL_BAUD);
   delay(200);
 
-  steerCenterBegin();
   steerServoBegin();
 
   // Legacy PIN pairing only (Android often fails if SSP + setPin are mixed).
@@ -187,26 +224,24 @@ void setup() {
   DBG_PRINTLN("  RC:CONNECT,proto,simple");
   DBG_PRINTLN("  RC:CTRL,lx,0,ly,0,rx,0,ry,0,lk,512,rk,512,sw,00");
   DBG_PRINTLN("  RC:BTN,id,1");
-  DBG_PRINTLN("  RC:SET,steer_center,1,rx,0");
-  DBG_PRINTLN("Steer trim: Android Tune → ◀/▶ → Check (center in NVS).");
+  DBG_PRINTLN("Steer: rx=0 is 1500 µs. Trim stays on the phone.");
   DBG_PRINTLN("Edit onControl() / onButton() at YOUR CODE HERE.");
   DBG_PRINTLN("Telemetry: RC:DATA every 500 ms (speed×10 from |ly|, demo batt/temp).");
 #if ENABLE_PLOT
-  DBG_PRINTLN("Plot ON — RC:PLOT ~50 ms (v0=temp, v1=|ly|, v2=batt, v3=|rx|).");
+  DBG_PRINTLN("Plot ON — RC:PLOT ~50 ms, CH1…CH8 (edit kTelemetryChannels[]).");
 #else
   DBG_PRINTLN("Plot OFF — set ENABLE_PLOT 1 to send RC:PLOT.");
 #endif
 #if ENABLE_SERIAL_INJECT
   DBG_PRINTLN("Serial inject @ 115200 (after handshake, line ending = Newline):");
   DBG_PRINTLN("  RC:DATA,left,186,right,0,lo,1,ro,0,lg,1,rg,0,analog,90,batt,76,led,01");
-  DBG_PRINTLN("  RC:PLOT,v0,128,v1,200,v2,64,v3,180");
+  DBG_PRINTLN("  RC:PLOT,v0,128,v1,200,v2,64,v3,180,v4,0,v5,0,v6,0,v7,0");
   DBG_PRINTLN("  Inject is one-shot (pulse); auto telemetry resumes after.");
 #endif
   DBG_PRINTLN();
 }
 
 void loop() {
-  steerCenterLoop();
   bool connected = SerialBT.hasClient();
   if (connected != btWasConnected) {
     btWasConnected = connected;
@@ -254,12 +289,13 @@ void loop() {
   if (now - lastPlotMs >= PLOT_MS) {
     lastPlotMs = now;
 
-    int v0 = DEMO_MOTOR_TEMP;
-    int v1 = constrain(map(abs(g_ly), 0, 100, 0, 255), 0, 255);
-    int v2 = constrain(map(DEMO_BATT_PCT, 0, 100, 0, 255), 0, 255);
-    int v3 = constrain(map(abs(g_rx), 0, 100, 0, 255), 0, 255);
-    char plot[64];
-    snprintf(plot, sizeof(plot), "RC:PLOT,v0,%d,v1,%d,v2,%d,v3,%d", v0, v1, v2, v3);
+    uint8_t sample[8];
+    telemetryReadAll(sample, kTelemetryChannels, telemetryVehicle);
+    char plot[128];
+    snprintf(plot, sizeof(plot),
+      "RC:PLOT,v0,%u,v1,%u,v2,%u,v3,%u,v4,%u,v5,%u,v6,%u,v7,%u",
+      sample[0], sample[1], sample[2], sample[3],
+      sample[4], sample[5], sample[6], sample[7]);
     sendLine(plot);
   }
 #endif
@@ -374,6 +410,7 @@ void applyFailSafe() {
   g_lx = g_ly = g_rx = g_ry = 0;
   g_lk = g_rk = 512;
   g_sw = 0;
+  steerServoWriteRx(0);
   DBG_PRINTLN("[IO] fail-safe");
   // YOUR CODE HERE — stop motors on disconnect
 }
@@ -467,10 +504,5 @@ void handleLine(const String& line) {
     onControl(g_lx, g_ly, g_rx, g_ry, g_lk, g_rk, g_sw);
   } else if (type.equalsIgnoreCase("BTN")) {
     onButton(getValue(line, "id").toInt());
-  } else if (type.equalsIgnoreCase("SET")) {
-    if (steerCenterHandleSetLine(line, g_rx)) {
-      steerServoHoldCenter();
-      sendLine("RC:ACK,steer_center,1");
-    }
   }
 }

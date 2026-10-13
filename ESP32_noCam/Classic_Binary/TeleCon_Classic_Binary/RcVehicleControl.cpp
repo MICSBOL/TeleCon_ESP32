@@ -1,5 +1,4 @@
 #include "RcVehicleControl.h"
-#include "SteerCenter.h"
 #include "TeleConConfig.h"
 #include "pins.h"
 
@@ -10,6 +9,21 @@
 #ifndef TELECON_VEHICLE_IO
 #define TELECON_VEHICLE_IO 1
 #endif
+
+// rx −100…100 maps around a fixed 1500 µs pulse. Phone trim offsets rx before send.
+constexpr int kSteerCenterUs = 1500;
+constexpr int kSteerTravelUs = 500;
+
+uint32_t steerDutyFromUs(int us) {
+  int pulse = constrain(us, 500, 2500);
+  return (uint32_t)((long)pulse * 4095L / 20000L);
+}
+
+uint32_t steerDutyFromRx(int rx) {
+  int s = constrain(rx, -100, 100);
+  int us = (int)map(s, -100, 100, kSteerCenterUs - kSteerTravelUs, kSteerCenterUs + kSteerTravelUs);
+  return steerDutyFromUs(us);
+}
 
 namespace {
 
@@ -66,10 +80,6 @@ void applyMotor(int throttleNeg100to100, int steerBias) {
 
 void applyOutputs() {
 #if !TELECON_VEHICLE_IO
-  // Still track rx for NVS steer-center lock when GPIO is disabled (e.g. CAM).
-  if (!failSafeActive) {
-    steerCenterNoteApplied(gState.rx);
-  }
   return;
 #else
   if (failSafeActive) {
@@ -79,13 +89,13 @@ void applyOutputs() {
     digitalWrite(PIN_DRIVE_R_DIR, LOW);
     digitalWrite(PIN_LIGHTS, LOW);
     digitalWrite(PIN_BUZZER, LOW);
-    // Safe idle steer = persisted mechanical straight (rx=0).
-    pwmWrite(PIN_STEER_SERVO, CH_STEER, steerCenterDuty12FromUs(steerCenterGetUs()));
+    // Safe idle steer = fixed 1500 µs center.
+    pwmWrite(PIN_STEER_SERVO, CH_STEER, steerDutyFromUs(kSteerCenterUs));
     return;
   }
 
-  applyMotor(gState.ly, steerCenterMapBias(gState.rx));
-  pwmWrite(PIN_STEER_SERVO, CH_STEER, steerCenterDuty12FromRx(gState.rx));
+  applyMotor(gState.ly, constrain(gState.rx, -100, 100));
+  pwmWrite(PIN_STEER_SERVO, CH_STEER, steerDutyFromRx(gState.rx));
   pwmWrite(PIN_PAN_SERVO, CH_PAN, servoDutyUs(gState.rk));
   digitalWrite(PIN_LIGHTS, (gState.sw & 0x01) ? HIGH : LOW);
 
@@ -101,8 +111,6 @@ void applyOutputs() {
 }  // namespace
 
 void rcVehicleBegin() {
-  steerCenterBegin();
-
 #if TELECON_VEHICLE_IO
   pinMode(PIN_DRIVE_L_DIR, OUTPUT);
   pinMode(PIN_DRIVE_R_DIR, OUTPUT);
@@ -120,11 +128,10 @@ void rcVehicleBegin() {
   setupPwm(PIN_STEER_SERVO, CH_STEER, 50, 12);
   setupPwm(PIN_PAN_SERVO, CH_PAN, 50, 12);
 
-  pwmWrite(PIN_STEER_SERVO, CH_STEER, steerCenterDuty12FromRx(0));
+  pwmWrite(PIN_STEER_SERVO, CH_STEER, steerDutyFromRx(0));
   pwmWrite(PIN_PAN_SERVO, CH_PAN, servoDutyUs(512));
 #if TELECON_DEBUG
-  DBG_PRINTF("[IO] RC Vehicle ready (steer centerUs=%d bias0=%d)\n",
-             steerCenterGetUs(), steerCenterGetBias0());
+  DBG_PRINTLN("[IO] RC Vehicle ready");
 #endif
 #else
 #if TELECON_DEBUG
@@ -155,29 +162,7 @@ void rcVehicleHandleBtn(int id) {
 #if TELECON_VEHICLE_IO
     if (!failSafeActive) pwmWrite(PIN_PAN_SERVO, CH_PAN, servoDutyUs(512));
 #endif
-  } else if (id == STEER_CENTER_BTN_ID) {
-    rcVehicleSaveSteerCenter();
   }
-}
-
-bool rcVehicleSaveSteerCenter() {
-  bool ok = steerCenterSaveFromCurrentRx(gState.rx);
-  rcVehicleHoldSteerCenter();
-#if TELECON_DEBUG
-  DBG_PRINTF("[IO] steer center saved us=%d bias0=%d\n",
-             steerCenterGetUs(), steerCenterGetBias0());
-#endif
-  return ok;
-}
-
-void rcVehicleHoldSteerCenter() {
-#if TELECON_VEHICLE_IO
-  // Hold captured straight until the next CTRL. Avoid duty12FromRx (clears saveLatched).
-  if (!failSafeActive) {
-    pwmWrite(PIN_STEER_SERVO, CH_STEER, steerCenterDuty12FromUs(steerCenterGetUs()));
-    applyMotor(gState.ly, steerCenterGetBias0());
-  }
-#endif
 }
 
 void rcVehicleFailSafe() {
@@ -192,7 +177,6 @@ void rcVehicleFailSafe() {
 }
 
 void rcVehicleLoop() {
-  steerCenterLoop();
 #if TELECON_VEHICLE_IO
   if (buzzerUntilMs != 0 && millis() >= buzzerUntilMs) {
     buzzerUntilMs = 0;

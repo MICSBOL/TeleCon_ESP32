@@ -38,19 +38,10 @@ Boot camera: VGA, quality 15, fps 12 (Android Balanced). `ampdu_rx=0|1` re-inits
 3. Enable SoftAP camera overlay; Connect targets the **DevKit**, not SoftAP TCP.
 4. Camera pane uses `/stream`.
 
-Control Panel has no one-CAM Role B. RC Vehicle Pro Role B uses a different sketch (video + TCP).
+Control stays on a DevKit running Classic Simple, Classic Binary, or BLE Binary.
 
 ## Flash
 
 1. Board: **AI Thinker ESP32-CAM**
 2. Open this folder’s `.ino`
 3. Upload; Serial @ **115200**
-
-## Need camera + control on one CAM? (RC Vehicle Pro only)
-
-Use SoftAP video **and** SoftAP TCP control (no extra DevKit):
-
-| Protocol | Sketch |
-|----------|--------|
-| Simple (Default) | `ESP32_cam/WiFi/TeleCon_CAM_WiFi_Simple/` |
-| Binary (Advanced) | `ESP32_cam/WiFi/TeleCon_CAM_WiFi_Binary/` |

@@ -14,9 +14,6 @@
  *   TeleCon_ESP32/.../TeleCon_Classic_Simple/  (ESP32-TC-RC-BT-Simple)
  *   TeleCon_ESP32/.../TeleCon_Classic_Binary/  (ESP32-TC-RC-BT-Binary)
  *   TeleCon_ESP32/.../TeleCon_BLE_Binary/      (ESP32-TC-RC-BLE-Binary)
- *
- * Single-board SoftAP video + TCP (RC Vehicle Pro only):
- *   TeleCon_ESP32/.../TeleCon_CAM_WiFi_Simple/
  */
 
 #include <Arduino.h>
@@ -45,7 +42,6 @@ void setup() {
   Serial.println("  Config http://192.168.4.1/camconfig  (Smooth/Balanced/HQ)");
   Serial.println("No TCP :3333 / no Bluetooth on this CAM.");
   Serial.println("Control: flash a DevKit Classic Simple, Classic Binary, or BLE Binary sketch.");
-  Serial.println("Single-board SoftAP control+video: use TeleCon_CAM_WiFi_Simple.");
   Serial.println();
 }
 

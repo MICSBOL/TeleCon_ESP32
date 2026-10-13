@@ -7,7 +7,7 @@
 
 #include "RcVehicleHandlers.h"
 #include "RcVehicleControl.h"
-#include "SteerCenter.h"
+#include "TelemetryChannels.h"
 #include "TeleConBluetooth.h"
 #include "TeleConConfig.h"
 #include "TeleConProtocol.h"
@@ -168,8 +168,8 @@ bool sendIndicatorPacket(uint8_t analog, uint8_t batt, uint8_t led) {
   return teleconSendBinary(pkt, TELECON_INDICATOR_SIZE);
 }
 
-bool sendPlotPacket(uint8_t v0, uint8_t v1, uint8_t v2, uint8_t v3) {
-  // CC 33 | len u16 LE | count=4 | b0..b3 | checksum
+bool sendPlotPacket(const uint8_t sample[8]) {
+  // CC 33 | len u16 LE | count=8 | b0..b7 | checksum
   uint8_t buf[16];
   int idx = 0;
   buf[idx++] = TELECON_PLOT_HDR0;
@@ -177,11 +177,8 @@ bool sendPlotPacket(uint8_t v0, uint8_t v1, uint8_t v2, uint8_t v3) {
   int lengthIndex = idx;
   buf[idx++] = 0;
   buf[idx++] = 0;
-  buf[idx++] = 4;
-  buf[idx++] = v0;
-  buf[idx++] = v1;
-  buf[idx++] = v2;
-  buf[idx++] = v3;
+  buf[idx++] = 8;
+  for (int i = 0; i < 8; i++) buf[idx++] = sample[i];
   uint16_t payloadLength = (uint16_t)(idx - 4);
   buf[lengthIndex] = payloadLength & 0xFF;
   buf[lengthIndex + 1] = (payloadLength >> 8) & 0xFF;
@@ -191,20 +188,28 @@ bool sendPlotPacket(uint8_t v0, uint8_t v1, uint8_t v2, uint8_t v3) {
   return teleconSendBinary(buf, (size_t)idx);
 }
 
-uint8_t readPlot0() {
-  return rcVehicleMotorTempAnalog();
-}
-
-uint8_t readPlot1() {
-  return (uint8_t)map(constrain(abs(rcVehicleState().ly), 0, 100), 0, 100, 0, 255);
-}
-
-uint8_t readPlot2() {
-  return (uint8_t)map(constrain(rcVehicleBatteryPercent(), 0, 100), 0, 100, 0, 255);
-}
-
-uint8_t readPlot3() {
-  return (uint8_t)map(constrain(abs(rcVehicleState().rx), 0, 100), 0, 100, 0, 255);
+uint8_t telemetryVehicle(TelVehicle id) {
+  const RcVehicleState& st = rcVehicleState();
+  switch (id) {
+    case TEL_TEMP:
+      return rcVehicleMotorTempAnalog();
+    case TEL_THROTTLE:
+      return (uint8_t)map(constrain(abs(st.ly), 0, 100), 0, 100, 0, 255);
+    case TEL_BATT:
+      return (uint8_t)map(constrain((int)rcVehicleBatteryPercent(), 0, 100), 0, 100, 0, 255);
+    case TEL_STEER:
+      return (uint8_t)map(constrain(abs(st.rx), 0, 100), 0, 100, 0, 255);
+    case TEL_LIGHTS:
+      return (st.sw & 0x01) ? 255 : 0;
+    case TEL_KNOB_L:
+      return (uint8_t)map(constrain(st.lk, 0, 1023), 0, 1023, 0, 255);
+    case TEL_KNOB_R:
+      return (uint8_t)map(constrain(st.rk, 0, 1023), 0, 1023, 0, 255);
+    case TEL_RY:
+      return (uint8_t)map(constrain(abs(st.ry), 0, 100), 0, 100, 0, 255);
+    default:
+      return 0;
+  }
 }
 
 bool canSendTelemetry() {
@@ -311,15 +316,8 @@ void handleRcBtnText(const String& line) {
 }
 
 void handleRcSetText(const String& line) {
-  if (!steerCenterHandleSetLine(line, rcVehicleState().rx)) {
-    return;  // unknown / ignored SET keys
-  }
-  rcVehicleHoldSteerCenter();
-  teleconSendLine("RC:ACK,steer_center,1");
-#if TELECON_DEBUG
-  DBG_PRINTF("[IO] steer center SET us=%d bias0=%d\n",
-             steerCenterGetUs(), steerCenterGetBias0());
-#endif
+  // Stock sketches ignore RC:SET. Trim stays on the phone.
+  (void)line;
 }
 
 void rcVehicleSendTelemetryIfDue() {
@@ -349,7 +347,9 @@ void rcVehicleSendTelemetryIfDue() {
 #if TELECON_AUTO_PLOT
   if (now - lastPlotMs >= RC_PLOT_MS) {
     lastPlotMs = now;
-    sendPlotPacket(readPlot0(), readPlot1(), readPlot2(), readPlot3());
+    uint8_t sample[8];
+    telemetryReadAll(sample, telemetryVehicle);
+    sendPlotPacket(sample);
   }
 #endif
 }
@@ -391,11 +391,13 @@ bool rcVehicleHandleSerialInjectLine(const String& line) {
   }
 
   if (line.startsWith("RC:PLOT")) {
-    uint8_t v0 = (uint8_t)constrain(getValue(line, "v0").toInt(), 0, 255);
-    uint8_t v1 = (uint8_t)constrain(getValue(line, "v1").toInt(), 0, 255);
-    uint8_t v2 = (uint8_t)constrain(getValue(line, "v2").toInt(), 0, 255);
-    uint8_t v3 = (uint8_t)constrain(getValue(line, "v3").toInt(), 0, 255);
-    bool ok = sendPlotPacket(v0, v1, v2, v3);
+    uint8_t sample[8];
+    for (int i = 0; i < 8; i++) {
+      char key[4];
+      snprintf(key, sizeof(key), "v%d", i);
+      sample[i] = (uint8_t)constrain(getValue(line, key).toInt(), 0, 255);
+    }
+    bool ok = sendPlotPacket(sample);
     DBG_PRINTLN("[SERIAL] inject RC:PLOT → CC 33 (one-shot)");
     return ok;
   }

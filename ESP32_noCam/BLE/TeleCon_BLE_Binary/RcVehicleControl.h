@@ -22,12 +22,8 @@ struct RcVehicleState {
 void rcVehicleBegin();
 void rcVehicleApply(const RcVehicleState& state);
 void rcVehicleHandleBtn(int id);
-/** Persist current steer output as mechanical center (NVS). Returns true if scheduled. */
-bool rcVehicleSaveSteerCenter();
-/** Hold servo/mix at saved straight without writing NVS again. */
-void rcVehicleHoldSteerCenter();
 void rcVehicleFailSafe();
-void rcVehicleLoop();  // non-blocking buzzer / NVS flush / outputs refresh
+void rcVehicleLoop();  // non-blocking buzzer / outputs refresh
 
 const RcVehicleState& rcVehicleState();
 

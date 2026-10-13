@@ -38,7 +38,37 @@ Binary: `AA 55` (18 B) control, `BB 66` buttons, `CC 11`/`CC 22` telemetry + opt
 - Speed km/h × 10 → panel `left` / `CC 11` left (`lo=1`)
 - Battery % → `batt` / `CC 22`
 - Motor temp → `analog` 0–255 / `CC 22`
-- Optional debug plot → `CC 33` count=4 (~20 Hz; HUD ignores)
+- Plot → `CC 33` count=8 (~20 Hz, 14 bytes). CH1…CH8. See **Telemetry channels** below.
+
+## Telemetry channels
+
+`kTelemetryChannels[]` in `TelemetryChannels.h` chooses the eight bytes in each `CC 33` plot (the same bus as Simple `RC:PLOT` `v0`…`v7`). Row 0 is phone **CH1**; row 7 is **CH8**. The phone channel menus already bind those bytes to plots, radar, gauges, and HUD badges. The app keeps eight channels; a ninth sample is dropped.
+
+A row is `{ kind, vehicle, pin, ledcChannel, dutyMin, dutyMax }`. Only the fields for `kind` are read.
+
+| `kind` | What is sent | Fields that matter |
+|--------|----------------|--------------------|
+| `TEL_VEHICLE` | Built-in signal: temp ADC, `\|ly\|`, battery scaled 0–255, `\|rx\|`, lights bit, knobs, `\|ry\|` | `vehicle` |
+| `TEL_ADC` | `analogRead(pin)`, 0–4095 → 0–255 | `pin` |
+| `TEL_GPIO` | `digitalRead(pin)` → 0 or 255. An output pin reports the level last written. | `pin` |
+| `TEL_PWM` | LEDC duty. `dutyMin` → 0, `dutyMax` → 255. Core 3.x reads `pin`; core 2.x reads `ledcChannel`. The pin must already be attached. | `pin`, `ledcChannel`, `dutyMin`, `dutyMax` |
+
+On a pin row the `vehicle` name is ignored. Throttle and steer vehicle signals are magnitudes (`abs`), so they do not show left versus right.
+
+Stock rows while `TELECON_VEHICLE_IO` is 1:
+
+| Phone | Source |
+|-------|--------|
+| CH1 | Motor temperature |
+| CH2 | Throttle magnitude |
+| CH3 | Battery, scaled to 0–255 |
+| CH4 | Steering-stick magnitude |
+| CH5 | Left-drive PWM, GPIO 25, duty 0…255 |
+| CH6 | Right-drive PWM, GPIO 27, duty 0…255 |
+| CH7 | Lights GPIO 15 |
+| CH8 | Pan-servo PWM, GPIO 12. Duty 204…409 is 1000–2000 µs (center ≈ 128). |
+
+Both axes of both sticks fit by replacing four rows. Map a signed axis with center 128: `map(axis, -100, 100, 0, 255)`. The plot stays one `CC 33` every 50 ms; using more of the eight bytes does not add a packet.
 
 Serial inject (after handshake): `RC:DATA` / `RC:PLOT` text → one-shot `CC 11`/`CC 22`/`CC 33` (Control Panel style).
 
@@ -72,16 +102,9 @@ This noCam build has no Wi‑Fi stream. The Android HUD shows camera offline / i
 4. Upload, open Serial Monitor at 115200.
 5. Pair/connect from Android RC Vehicle Pro with the Connection type above.
 
-## Steer center trim (Android)
+## Steering trim (Android)
 
-1. Connect with the mode in this README (Classic / BLE / SoftAP x Simple or Binary).
-2. On **RC Vehicle Pro**, tap the Tune icon on the steering control.
-3. Keep the stick at visual zero; use **left/right tickers** until the wheels look straight.
-4. Tap **Check** — phone sends `RC:SET,steer_center,1,rx,<n>` and/or `BB 66` id `0x10`.
-5. Firmware stores the current steering PWM / mix bias in **NVS** on the vehicle.
-6. After reboot, stick `rx = 0` (and E-stop sticks 0) hold that mechanical straight.
-
-Module: `SteerCenter.h` / `SteerCenter.cpp` in this sketch folder.
+Tune tickers on **RC Vehicle Pro** shift `rx` before it is sent. Check only closes that mode. This sketch does not store a center: `rx = 0` is 1500 µs (±500 µs at full stick).
 
 ## Fail-safe
 

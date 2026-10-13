@@ -27,7 +27,7 @@ void setup() {
 #if TELECON_SERIAL_INJECT
   DBG_PRINTLN("Serial inject @ 115200 (after handshake, line ending = Newline):");
   DBG_PRINTLN("  RC:DATA,left,186,right,0,lo,1,ro,0,lg,1,rg,0,analog,90,batt,76,led,01");
-  DBG_PRINTLN("  RC:PLOT,v0,128,v1,200,v2,64,v3,180");
+  DBG_PRINTLN("  RC:PLOT,v0,128,v1,200,v2,64,v3,180,v4,0,v5,0,v6,0,v7,0");
   DBG_PRINTLN("  Inject is one-shot (pulse); auto telemetry resumes after.");
 #endif
 }
